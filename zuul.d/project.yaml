@@ -1,0 +1,7 @@
+- project:
+    check:
+      jobs:
+        - nox-linters
+    gate:
+      jobs:
+        - nox-linters
