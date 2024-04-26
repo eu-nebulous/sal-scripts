@@ -136,11 +136,6 @@ log_print INFO "onm-bootstrap($PID): Current Payload is: $PAYLOAD"
 
 if [ "$ACTION" == "CREATE" ]; then
   curl -v -X POST -H "Content-Type: application/json" -d "$PAYLOAD" http://${ONM_IP}:8082/api/v1/node/create
-
-  log_print INFO "onm-bootstrap($PID): Setting Wireguard IP to Kubelet. Restarting Kubelet..."
-  WIREGUARD_VPN_IP=`ip a | grep wg | grep inet | awk '{print $2}' | cut -d'/' -f1`
-  echo "KUBELET_EXTRA_ARGS=--node-ip=${WIREGUARD_VPN_IP} --container-runtime-endpoint=unix:///run/containerd/containerd.sock" | sudo tee -a /etc/default/kubelet
-  sudo systemctl restart kubelet
 elif [ "$ACTION" == "DELETE" ]; then
   curl -v -X DELETE -H "Content-Type: application/json" -d "$PAYLOAD" http://${ONM_IP}:8082/api/v1/node/delete
 fi
