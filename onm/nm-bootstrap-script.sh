@@ -80,6 +80,12 @@ log_print INFO "onm-bootstrap($PID): Starting onm-bootstrap with the following p
                 APPLICATION_UUID=$APPLICATION_UUID, ONM_IP=$ONM_IP, PUBLIC_IP=$public_ip,
                 LOGGED_IN_USER=$logged_in_user, SSH_PORT=$SSH_PORT"
 
+log_print INFO "onm-bootstrap($PID): Updating apt..."
+Check_lock
+
+sudo apt-get update
+
+
 log_print INFO "onm-bootstrap($PID): Installing wireguard and resolvconf..."
 
 Check_lock
