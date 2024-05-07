@@ -1,4 +1,4 @@
-
+#!/bin/bash
 echo "Worker pre-install script"
 sudo hostnamectl set-hostname "$variables_PA_JOB_NAME"
 sudo -H -u ubuntu bash -c 'wget https://opendev.org/nebulous/sal-scripts/raw/branch/master/onm/nm-bootstrap-script.sh && chmod +x nm-bootstrap-script.sh'

@@ -1,4 +1,4 @@
-
+#!/bin/bash
 echo "Master start script"
 WIREGUARD_VPN_IP=`ip a | grep wg | grep inet | awk '{print $2}' | cut -d'/' -f1`;
 echo "WIREGUARD_VPN_IP=$WIREGUARD_VPN_IP";
