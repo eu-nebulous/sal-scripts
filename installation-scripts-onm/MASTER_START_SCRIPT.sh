@@ -38,9 +38,9 @@ echo "Starting EMS"
   --set tolerations[0].operator="Exists" \
   --set tolerations[0].effect="NoSchedule" \
   --set app_uuid=$APPLICATION_ID \
-  --set broker_address=158.37.63.86 \
+  --set broker_address=$BROKER_IP \
   --set image.tag="2024-apr-nebulous" \
-  --set broker_port=32754'
+  --set broker_port=$BROKER_PORT'
 
 
 sudo -H -u ubuntu bash -c 'helm install netdata netdata/netdata'
@@ -50,7 +50,7 @@ sudo -H -E -u ubuntu bash -c 'helm install solver nebulous/nebulous-optimiser-so
   --set tolerations[0].key="node-role.kubernetes.io/control-plane" \
   --set tolerations[0].operator="Exists" \
   --set tolerations[0].effect="NoSchedule" \
-  --set amplLicense.keyValue="NjYxZTQzNDQ5ODE2NDczZWIzNDIwNDc2NzZlZjI5Mzc1MjQ0MDUyMGM3MzczYzI5MTg1ODBjNWFmNzBmMzZiN2U3YWYxNzZjYTY2NjQyYTZjMWYzYzFiNjQwNmFlYTgxMTRiZjhhNDg5ZjQ0OGJjZGIyYTc2MDYzNzNiMjNiMTdjNWQ4ZjlhMjg2MjcyYzg4ZjIxOWZjZWZjMTY0MzIxMmU2ZWFjZTY5M2EzMDliYjNlMzBkN2UzNTI3MjA3OTgxZTBhMjNhNWNkOGIzYjcyOGUwZTc2ZWJiZDQwMjNhZTZiNGJkZmFiYmY1MDdkZTJlODM0M2UyNmNjNDc4NjlhNjQ0ZmZkODYxZmQzNjE0ZmVmYTJkYmZhNzI0YmMyODU3MTFmM2Q1Zjg3M2IyOTk0ODViZGNlOTBiYTRlNzc1YjQwMjI1MTI3MzIzNTBlYzZhNjExOGI4NjkyNmUwMDhjNjg1OTQwNjAyYjA5NzhlYzAxMjlmY2Q4NzM0ZDhjNGM2NDIwYmQ4MzE4OWU0NWM0MTk1ZWE4MzMxMzI0NjE4ZjBjN2RlYTViMTk0MTQ0MTJjN2MzMTNiOTIzMmQ4MTVlMGIxZDYzZjYxY2M0MWM1MzIzMDdkOTBiYjkwMWMyYTM0NTZhMWU0MGQ0OTkzOTAxMWEwMTIwMjEwYzNkYWE1YjNlN2YzZTk4ZGNhMDRmZTgyNDA3ZDc4MzQ0NGIzODcwMGU1MzdlNGJkOWI3MmY3MGY1NDQwZGM4YmE1OWE5MjU1YzJlMWM0OGRmYWM2ZTAwNmE5MGZkMzI1ODYwYzVkMzFkNDRlZTBhNTZjZTJlNTM2OWM3MTMzOTE4NWNhZjAxMWIxNzY2NGE3YTRjNWRhZjM5MjMxM2Q4YWUxODdmZTI0NzY2M2JmYjI2MDIwMGFjNGIyN2JmNGI0NDIzNTYxMzE1MmJlZDQxODMzYTZlOWViNTE1YjBjMjNiNjkzMmRhNjE2MmQ3OTE0OWY4NTE1MTdiYTgwNDY4MjAzMzcwODA0YjYyZmZi" \
+  --set amplLicense.keyValue="$LICENSE_AMPL" \
   --set application.id=$APPLICATION_ID \
-  --set activemq.ACTIVEMQ_HOST=158.37.63.86 \
-  --set activemq.ACTIVEMQ_PORT=32754'
+  --set activemq.ACTIVEMQ_HOST=$BROKER_IP \
+  --set activemq.ACTIVEMQ_PORT=$BROKER_PORT'
