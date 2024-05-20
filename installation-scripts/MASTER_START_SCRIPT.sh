@@ -20,7 +20,7 @@ sudo -H -u ubuntu kubectl apply -f https://github.com/flannel-io/flannel/release
 
 echo "Setting KubeVela..."
 sudo -H -u ubuntu bash -c 'helm repo add kubevela https://kubevela.github.io/charts && helm repo update'
-sudo -H -u ubuntu bash -c 'nohup helm install --create-namespace -n vela-system kubevela kubevela/vela-core --version 1.8.2 > /home/ubuntu/vela.txt 2>&1 &'
+sudo -H -u ubuntu bash -c 'nohup vela install --version 1.9.0 > /home/ubuntu/vela.txt 2>&1 &'
 
 sudo -H -u ubuntu bash -c 'helm repo add nebulous https://jmarchel7bulls.github.io/helm-charts/'
 
