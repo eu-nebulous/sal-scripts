@@ -2,8 +2,8 @@
 echo "Master pre-install script\n"
 
 sudo hostnamectl set-hostname "$variables_PA_JOB_NAME"
-sudo -H -u ubuntu bash -c 'wget https://opendev.org/nebulous/sal-scripts/raw/branch/master/onm/nm-bootstrap-script.sh && chmod +x nm-bootstrap-script.sh'
-sudo -H -u ubuntu bash -c "./nm-bootstrap-script.sh 'CREATE' 'MASTER' $APPLICATION_ID $ONM_IP $PUBLIC_IP $SSH_PORT";
+sudo -H -u ubuntu bash -c 'wget https://raw.githubusercontent.com/eu-nebulous/overlay-network-manager/main/network-manager/bootstrap-agent-scripts/onm/onm-bootstrap.sh && chmod +x onm-bootstrap.sh'
+sudo -H -u ubuntu bash -c "./onm-bootstrap.sh 'CREATE' $APPLICATION_ID $ONM_URL $PUBLIC_IP $SSH_PORT";
 echo ""
 echo ""
 sleep 60
