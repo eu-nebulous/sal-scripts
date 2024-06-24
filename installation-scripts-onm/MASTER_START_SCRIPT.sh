@@ -54,3 +54,42 @@ sudo -H -E -u ubuntu bash -c 'helm install solver nebulous/nebulous-optimiser-so
   --set application.id=$APPLICATION_ID \
   --set activemq.ACTIVEMQ_HOST=$BROKER_IP \
   --set activemq.ACTIVEMQ_PORT=$BROKER_PORT'
+
+if [ "$SERVERLESS_ENABLED" == "yes" ]; then
+  echo "Serverless installation."
+
+  # Install Cosign
+  export COSIGN_VERSION=$(curl -s https://api.github.com/repos/sigstore/cosign/releases/latest | jq -r '.tag_name')
+  curl -LO "https://github.com/sigstore/cosign/releases/download/${COSIGN_VERSION}/cosign-linux-amd64"
+  sudo mv cosign-linux-amd64 /usr/local/bin/cosign
+  sudo chmod +x /usr/local/bin/cosign
+
+  # Update system and install jq
+  sudo apt update
+  sudo apt install -y jq
+
+  # Apply Knative Serving CRDs and core components
+  kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1.14.1/serving-crds.yaml
+  kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1.14.1/serving-core.yaml
+
+  # Download and apply Kourier
+  wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/main/serverless/kourier.yaml
+  kubectl apply -f kourier.yaml
+
+  # Patch config-domain with PUBLIC_IP
+  kubectl patch configmap/config-domain \
+    --namespace knative-serving \
+    --type merge \
+    --patch "{\"data\":{\"${PUBLIC_IP}.sslip.io\":\"\"}}"
+
+  # Patch config-network to use Kourier ingress
+  kubectl patch configmap/config-network \
+    --namespace knative-serving \
+    --type merge \
+    --patch '{"data":{"ingress-class":"kourier.ingress.networking.knative.dev"}}'
+
+  # Apply default domain configuration
+  kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1.12.4/serving-default-domain.yaml
+
+  echo "Serverless installation completed."
+fi
