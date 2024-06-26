@@ -91,5 +91,6 @@ if [ "$SERVERLESS_ENABLED" == "yes" ]; then
   # Apply default domain configuration
   kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1.12.4/serving-default-domain.yaml
 
+  kubectl apply -f https://raw.githubusercontent.com/kubevela/samples/master/06.Knative_App/componentdefinition-knative-serving.yaml
   echo "Serverless installation completed."
 fi
