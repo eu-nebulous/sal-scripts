@@ -560,13 +560,15 @@ spec:
       port: 80
       protocol: TCP
       targetPort: 8080
+      nodePort: 31080
     - name: https
       port: 443
       protocol: TCP
       targetPort: 8443
+      nodePort: 31443
   selector:
     app: 3scale-kourier-gateway
-  type: LoadBalancer
+  type: NodePort
 ---
 apiVersion: v1
 kind: Service
@@ -584,12 +586,10 @@ spec:
       port: 80
       protocol: TCP
       targetPort: 8081
-      nodePort: 31080
     - name: https
       port: 443
       protocol: TCP
       targetPort: 8444
-      nodePort: 31443
   selector:
     app: 3scale-kourier-gateway
   type: ClusterIP
