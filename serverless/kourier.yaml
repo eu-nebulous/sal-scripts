@@ -568,7 +568,7 @@ spec:
       nodePort: 31443
   selector:
     app: 3scale-kourier-gateway
-  type: LoadBalancer
+  type: NodePort
 ---
 apiVersion: v1
 kind: Service
