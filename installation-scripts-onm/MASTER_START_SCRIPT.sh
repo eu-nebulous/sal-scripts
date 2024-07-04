@@ -26,7 +26,7 @@ echo "Setting KubeVela..."
 sudo -H -u ubuntu bash -c 'helm repo add kubevela https://kubevela.github.io/charts && helm repo update'
 sudo -H -u ubuntu bash -c 'nohup vela install --version 1.9.11 > /home/ubuntu/vela.txt 2>&1 &'
 
-sudo -H -u ubuntu bash -c 'helm repo add nebulous https://jmarchel7bulls.github.io/helm-charts/'
+sudo -H -u ubuntu bash -c 'helm repo add nebulous https://eu-nebulous.github.io/helm-charts/'
 
 sudo -H -u ubuntu bash -c 'helm repo add netdata https://netdata.github.io/helmchart/'
 
