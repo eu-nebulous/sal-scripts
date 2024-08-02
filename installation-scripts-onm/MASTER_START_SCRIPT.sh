@@ -76,6 +76,9 @@ if [ "$SERVERLESS_ENABLED" == "yes" ]; then
   wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/main/serverless/kourier.yaml
   kubectl apply -f kourier.yaml
 
+  wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/main/serverless/serverless-platform-definition.yaml
+  kubectl apply -f serverless-platform-definition.yaml
+
   # Patch config-domain with PUBLIC_IP
   kubectl patch configmap/config-domain \
     --namespace knative-serving \
