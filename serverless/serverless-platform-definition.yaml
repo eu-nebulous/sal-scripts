@@ -1,0 +1,33 @@
+apiVersion: core.oam.dev/v1beta1
+kind: ComponentDefinition
+metadata:
+  name: serverless-platform
+spec:
+  workload:
+    definition:
+      apiVersion: v1
+      kind: ConfigMap
+  schematic:
+    cue:
+      template: |
+        parameter: {
+          resources: {
+            requests: {
+              cpu: string
+              memory: string
+            }
+          }
+          replicas: int
+        }
+        output: {
+          apiVersion: "v1"
+          kind: "ConfigMap"
+          metadata: {
+            name: context.name
+          }
+          data: {
+            "cpu-request": parameter.resources.requests.cpu
+            "memory-request": parameter.resources.requests.memory
+            "replicas": "\(parameter.replicas)"
+          }
+        }
