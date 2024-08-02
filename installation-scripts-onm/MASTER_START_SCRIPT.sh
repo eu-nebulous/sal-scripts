@@ -26,11 +26,14 @@ echo "Setting KubeVela..."
 sudo -H -u ubuntu bash -c 'helm repo add kubevela https://kubevela.github.io/charts && helm repo update'
 sudo -H -u ubuntu bash -c 'nohup vela install --version 1.9.11 > /home/ubuntu/vela.txt 2>&1 &'
 
-sudo -H -u ubuntu bash -c 'helm repo add nebulous https://jmarchel7bulls.github.io/helm-charts/'
+sudo -H -u ubuntu bash -c 'helm repo add nebulous https://eu-nebulous.github.io/helm-charts/'
 
 sudo -H -u ubuntu bash -c 'helm repo add netdata https://netdata.github.io/helmchart/'
 
 sudo -H -u ubuntu bash -c 'helm repo update'
+
+echo "Login to docker registry"
+sudo -H -u ubuntu bash -c "kubectl create secret docker-registry regcred --docker-server=$PRIVATE_DOCKER_REGISTRY_SERVER --docker-username=$PRIVATE_DOCKER_REGISTRY_USERNAME --docker-password=$PRIVATE_DOCKER_REGISTRY_PASSWORD --docker-email=$PRIVATE_DOCKER_REGISTRY_EMAIL"
 
 echo "Starting EMS"
   sudo -H -E -u ubuntu bash -c 'helm install ems nebulous/ems-server \
@@ -38,8 +41,8 @@ echo "Starting EMS"
   --set tolerations[0].operator="Exists" \
   --set tolerations[0].effect="NoSchedule" \
   --set app_uuid=$APPLICATION_ID \
-  --set broker_address=$BROKER_IP \
-  --set image.tag="2024-apr-nebulous" \
+  --set broker_address=$BROKER_ADDRESS \
+  --set image.tag="latest" \
   --set broker_port=$BROKER_PORT'
 
 
@@ -52,8 +55,11 @@ sudo -H -E -u ubuntu bash -c 'helm install solver nebulous/nebulous-optimiser-so
   --set tolerations[0].effect="NoSchedule" \
   --set amplLicense.keyValue="$LICENSE_AMPL" \
   --set application.id=$APPLICATION_ID \
-  --set activemq.ACTIVEMQ_HOST=$BROKER_IP \
+  --set activemq.ACTIVEMQ_HOST=$BROKER_ADDRESS \
   --set activemq.ACTIVEMQ_PORT=$BROKER_PORT'
+
+echo "Add volumes provisioner"
+sudo -H -u ubuntu bash -c "kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.27/deploy/local-path-storage.yaml"  
 
 if [ "$SERVERLESS_ENABLED" == "yes" ]; then
   echo "Serverless installation."
@@ -69,8 +75,8 @@ if [ "$SERVERLESS_ENABLED" == "yes" ]; then
   sudo apt install -y jq
 
   # Apply Knative Serving CRDs and core components
-  kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1.14.1/serving-crds.yaml
-  kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1.14.1/serving-core.yaml
+  kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1.12.4/serving-crds.yaml
+  kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1.12.4/serving-core.yaml
 
   # Download and apply Kourier
   wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/main/serverless/kourier.yaml
@@ -80,10 +86,13 @@ if [ "$SERVERLESS_ENABLED" == "yes" ]; then
   kubectl apply -f serverless-platform-definition.yaml
 
   # Patch config-domain with PUBLIC_IP
+  MASTER_IP=$(curl -s ifconfig.me)
+
+  # Patch config-domain with MASTER_IP
   kubectl patch configmap/config-domain \
     --namespace knative-serving \
     --type merge \
-    --patch "{\"data\":{\"${PUBLIC_IP}.sslip.io\":\"\"}}"
+    --patch "{\"data\":{\"${MASTER_IP}.sslip.io\":\"\"}}"
 
   # Patch config-network to use Kourier ingress
   kubectl patch configmap/config-network \
