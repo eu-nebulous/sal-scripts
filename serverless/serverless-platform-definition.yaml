@@ -13,11 +13,11 @@ spec:
         parameter: {
           resources: {
             requests: {
-              cpu: string
-              memory: string
+              cpu: *"100m" | string
+              memory: *"128Mi" | string
             }
           }
-          replicas: int
+          replicas: *1 | int
         }
         output: {
           apiVersion: "v1"
