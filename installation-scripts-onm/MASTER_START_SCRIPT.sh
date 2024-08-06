@@ -85,6 +85,9 @@ if [ "$SERVERLESS_ENABLED" == "yes" ]; then
   wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/main/serverless/serverless-platform-definition.yaml
   kubectl apply -f serverless-platform-definition.yaml
 
+  wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/main/serverless/config-features.yaml
+  kubectl apply -f .yaml
+
   # Patch config-domain with PUBLIC_IP
   MASTER_IP=$(curl -s ifconfig.me)
 

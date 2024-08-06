@@ -1,0 +1,199 @@
+apiVersion: v1
+data:
+  ################################
+  #                              #
+  #    EXAMPLE CONFIGURATION     #
+  #                              #
+  ################################
+
+  # This block is not actually functional configuration,
+  # but serves to illustrate the available configuration
+  # options and document them in a way that is accessible
+  # to users that `kubectl edit` this config map.
+  #
+  # These sample configuration options may be copied out of
+  # this example block and unindented to be in the data block
+  # to actually change the configuration.
+
+  # Default SecurityContext settings to secure-by-default values
+  # if unset.
+  #
+  # This value will default to "enabled" in a future release,
+  # probably Knative 1.10
+  secure-pod-defaults: "disabled"
+
+  # Indicates whether multi container support is enabled
+  #
+  # WARNING: Cannot safely be disabled once enabled.
+  # See: https://knative.dev/docs/serving/feature-flags/#multi-containers
+  multi-container: "enabled"
+
+  # Indicates whether Kubernetes affinity support is enabled
+  #
+  # WARNING: Cannot safely be disabled once enabled.
+  # See: https://knative.dev/docs/serving/feature-flags/#kubernetes-node-affinity
+  kubernetes.podspec-affinity: "enabled"
+
+  # Indicates whether Kubernetes topologySpreadConstraints support is enabled
+  #
+  # WARNING: Cannot safely be disabled once enabled.
+  # See: https://knative.dev/docs/serving/feature-flags/#kubernetes-topology-spread-constraints
+  kubernetes.podspec-topologyspreadconstraints: "disabled"
+
+  # Indicates whether Kubernetes hostAliases support is enabled
+  #
+  # WARNING: Cannot safely be disabled once enabled.
+  # See: https://knative.dev/docs/serving/feature-flags/#kubernetes-host-aliases
+  kubernetes.podspec-hostaliases: "disabled"
+
+  # Indicates whether Kubernetes nodeSelector support is enabled
+  #
+  # WARNING: Cannot safely be disabled once enabled.
+  # See: https://knative.dev/docs/serving/feature-flags/#kubernetes-node-selector
+  kubernetes.podspec-nodeselector: "disabled"
+
+  # Indicates whether Kubernetes tolerations support is enabled
+  #
+  # WARNING: Cannot safely be disabled once enabled
+  # See: https://knative.dev/docs/serving/feature-flags/#kubernetes-toleration
+  kubernetes.podspec-tolerations: "disabled"
+
+  # Indicates whether Kubernetes FieldRef support is enabled
+  #
+  # WARNING: Cannot safely be disabled once enabled.
+  # See: https://knative.dev/docs/serving/feature-flags/#kubernetes-fieldref
+  kubernetes.podspec-fieldref: "disabled"
+
+  # Indicates whether Kubernetes RuntimeClassName support is enabled
+  #
+  # WARNING: Cannot safely be disabled once enabled.
+  # See: https://knative.dev/docs/serving/feature-flags/#kubernetes-runtime-class
+  kubernetes.podspec-runtimeclassname: "disabled"
+
+  # Indicates whether Kubernetes DNSPolicy support is enabled
+  #
+  # WARNING: Cannot safely be disabled once enabled.
+  # See: https://knative.dev/docs/serving/feature-flags/#kubernetes-dnspolicy
+  kubernetes.podspec-dnspolicy: "disabled"
+
+  # Indicates whether Kubernetes DNSConfig support is enabled
+  #
+  # WARNING: Cannot safely be disabled once enabled.
+  # See: https://knative.dev/docs/serving/feature-flags/#kubernetes-dnsconfig
+  kubernetes.podspec-dnsconfig: "disabled"
+
+  # This feature allows end-users to set a subset of fields on the Pod's SecurityContext
+  #
+  # When set to "enabled" or "allowed" it allows the following
+  # PodSecurityContext properties:
+  # - FSGroup
+  # - RunAsGroup
+  # - RunAsNonRoot
+  # - SupplementalGroups
+  # - RunAsUser
+  # - SeccompProfile
+  #
+  # This feature flag should be used with caution as the PodSecurityContext
+  # properties may have a side-effect on non-user sidecar containers that come
+  # from Knative or your service mesh
+  #
+  # WARNING: Cannot safely be disabled once enabled.
+  # See: https://knative.dev/docs/serving/feature-flags/#kubernetes-security-context
+  kubernetes.podspec-securitycontext: "disabled"
+
+  # Indicated whether sharing the process namespace via ShareProcessNamespace pod spec is allowed.
+  # This can be especially useful for sharing data from images directly between sidecars
+  #
+  # See: https://knative.dev/docs/serving/configuration/feature-flags/#kubernetes-share-process-namespace
+  kubernetes.podspec-shareprocessnamespace: "disabled"
+
+  # Indicates whether Kubernetes PriorityClassName support is enabled
+  #
+  # WARNING: Cannot safely be disabled once enabled.
+  # See: https://knative.dev/docs/serving/feature-flags/#kubernetes-priority-class-name
+  kubernetes.podspec-priorityclassname: "disabled"
+
+  # Indicates whether Kubernetes SchedulerName support is enabled
+  #
+  # WARNING: Cannot safely be disabled once enabled.
+  # See: https://knative.dev/docs/serving/feature-flags/#kubernetes-scheduler-name
+  kubernetes.podspec-schedulername: "disabled"
+
+  # This feature flag allows end-users to add a subset of capabilities on the Pod's SecurityContext.
+  #
+  # When set to "enabled" or "allowed" it allows capabilities to be added to the container.
+  # For a list of possible capabilities, see https://man7.org/linux/man-pages/man7/capabilities.7.html
+  kubernetes.containerspec-addcapabilities: "disabled"
+
+  # This feature validates PodSpecs from the validating webhook
+  # against the K8s API Server.
+  #
+  # When "enabled", the server will always run the extra validation.
+  # When "allowed", the server will not run the dry-run validation by default.
+  #   However, clients may enable the behavior on an individual Service by
+  #   attaching the following metadata annotation: "features.knative.dev/podspec-dryrun":"enabled".
+  # See: https://knative.dev/docs/serving/feature-flags/#kubernetes-dry-run
+  kubernetes.podspec-dryrun: "allowed"
+
+  # Controls whether tag header based routing feature are enabled or not.
+  # 1. Enabled: enabling tag header based routing
+  # 2. Disabled: disabling tag header based routing
+  # See: https://knative.dev/docs/serving/feature-flags/#tag-header-based-routing
+  tag-header-based-routing: "disabled"
+
+  # Controls whether http2 auto-detection should be enabled or not.
+  # 1. Enabled: http2 connection will be attempted via upgrade.
+  # 2. Disabled: http2 connection will only be attempted when port name is set to "h2c".
+  autodetect-http2: "disabled"
+
+  # Controls whether volume support for EmptyDir is enabled or not.
+  # 1. Enabled: enabling EmptyDir volume support
+  # 2. Disabled: disabling EmptyDir volume support
+  kubernetes.podspec-volumes-emptydir: "enabled"
+
+  # Controls whether init containers support is enabled or not.
+  # 1. Enabled: enabling init containers support
+  # 2. Disabled: disabling init containers support
+  kubernetes.podspec-init-containers: "disabled"
+
+  # Controls whether persistent volume claim support is enabled or not.
+  # 1. Enabled: enabling persistent volume claim support
+  # 2. Disabled: disabling persistent volume claim support
+  kubernetes.podspec-persistent-volume-claim: "disabled"
+
+  # Controls whether write access for persistent volumes is enabled or not.
+  # 1. Enabled: enabling write access for persistent volumes
+  # 2. Disabled: disabling write access for persistent volumes
+  kubernetes.podspec-persistent-volume-write: "disabled"
+
+  # Controls if the queue proxy podInfo feature is enabled, allowed or disabled
+  #
+  # This feature should be enabled/allowed when using queue proxy Options (Extensions)
+  # Enabling will mount a podInfo volume to the queue proxy container.
+  # The volume will contains an 'annotations' file (from the pod's annotation field).
+  # The annotations in this file include the Service annotations set by the client creating the service.
+  # If mounted, the annotations can be accessed by queue proxy extensions at /etc/podinfo/annnotations
+  #
+  # 1. "enabled": always mount a podInfo volume
+  # 2. "disabled": never mount a podInfo volume
+  # 3. "allowed": by default, do not mount a podInfo volume
+  #   However, a client may mount the podInfo volume on an individual Service by attaching
+  #   the following metadata annotation to the Service: "features.knative.dev/queueproxy-podinfo":"enabled".
+  #
+  # NOTE THAT THIS IS AN EXPERIMENTAL / ALPHA FEATURE
+  queueproxy.mount-podinfo: "disabled"
+
+  # Default queue proxy resource requests and limits to good values for most cases if set.
+  queueproxy.resource-defaults: "disabled"
+kind: ConfigMap
+metadata:
+  annotations:
+    knative.dev/example-checksum: f2fc138e
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","data":{"_example":"################################\n#                              #\n#    EXAMPLE CONFIGURATION     #\n#                              #\n################################\n\n# This block is not actually functional configuration,\n# but serves to illustrate the available configuration\n# options and document them in a way that is accessible\n# to users that `kubectl edit` this config map.\n#\n# These sample configuration options may be copied out of\n# this example block and unindented to be in the data block\n# to actually change the configuration.\n\n# Default SecurityContext settings to secure-by-default values\n# if unset.\n#\n# This value will default to \"enabled\" in a future release,\n# probably Knative 1.10\nsecure-pod-defaults: \"disabled\"\n\n# Indicates whether multi container support is enabled\n#\n# WARNING: Cannot safely be disabled once enabled.\n# See: https://knative.dev/docs/serving/feature-flags/#multi-containers\nmulti-container: \"enabled\"\n\n# Indicates whether Kubernetes affinity support is enabled\n#\n# WARNING: Cannot safely be disabled once enabled.\n# See: https://knative.dev/docs/serving/feature-flags/#kubernetes-node-affinity\nkubernetes.podspec-affinity: \"disabled\"\n\n# Indicates whether Kubernetes topologySpreadConstraints support is enabled\n#\n# WARNING: Cannot safely be disabled once enabled.\n# See: https://knative.dev/docs/serving/feature-flags/#kubernetes-topology-spread-constraints\nkubernetes.podspec-topologyspreadconstraints: \"disabled\"\n\n# Indicates whether Kubernetes hostAliases support is enabled\n#\n# WARNING: Cannot safely be disabled once enabled.\n# See: https://knative.dev/docs/serving/feature-flags/#kubernetes-host-aliases\nkubernetes.podspec-hostaliases: \"disabled\"\n\n# Indicates whether Kubernetes nodeSelector support is enabled\n#\n# WARNING: Cannot safely be disabled once enabled.\n# See: https://knative.dev/docs/serving/feature-flags/#kubernetes-node-selector\nkubernetes.podspec-nodeselector: \"disabled\"\n\n# Indicates whether Kubernetes tolerations support is enabled\n#\n# WARNING: Cannot safely be disabled once enabled\n# See: https://knative.dev/docs/serving/feature-flags/#kubernetes-toleration\nkubernetes.podspec-tolerations: \"disabled\"\n\n# Indicates whether Kubernetes FieldRef support is enabled\n#\n# WARNING: Cannot safely be disabled once enabled.\n# See: https://knative.dev/docs/serving/feature-flags/#kubernetes-fieldref\nkubernetes.podspec-fieldref: \"disabled\"\n\n# Indicates whether Kubernetes RuntimeClassName support is enabled\n#\n# WARNING: Cannot safely be disabled once enabled.\n# See: https://knative.dev/docs/serving/feature-flags/#kubernetes-runtime-class\nkubernetes.podspec-runtimeclassname: \"disabled\"\n\n# Indicates whether Kubernetes DNSPolicy support is enabled\n#\n# WARNING: Cannot safely be disabled once enabled.\n# See: https://knative.dev/docs/serving/feature-flags/#kubernetes-dnspolicy\nkubernetes.podspec-dnspolicy: \"disabled\"\n\n# Indicates whether Kubernetes DNSConfig support is enabled\n#\n# WARNING: Cannot safely be disabled once enabled.\n# See: https://knative.dev/docs/serving/feature-flags/#kubernetes-dnsconfig\nkubernetes.podspec-dnsconfig: \"disabled\"\n\n# This feature allows end-users to set a subset of fields on the Pod's SecurityContext\n#\n# When set to \"enabled\" or \"allowed\" it allows the following\n# PodSecurityContext properties:\n# - FSGroup\n# - RunAsGroup\n# - RunAsNonRoot\n# - SupplementalGroups\n# - RunAsUser\n# - SeccompProfile\n#\n# This feature flag should be used with caution as the PodSecurityContext\n# properties may have a side-effect on non-user sidecar containers that come\n# from Knative or your service mesh\n#\n# WARNING: Cannot safely be disabled once enabled.\n# See: https://knative.dev/docs/serving/feature-flags/#kubernetes-security-context\nkubernetes.podspec-securitycontext: \"disabled\"\n\n# Indicated whether sharing the process namespace via ShareProcessNamespace pod spec is allowed.\n# This can be especially useful for sharing data from images directly between sidecars\n#\n# See: https://knative.dev/docs/serving/configuration/feature-flags/#kubernetes-share-process-namespace\nkubernetes.podspec-shareprocessnamespace: \"disabled\"\n\n# Indicates whether Kubernetes PriorityClassName support is enabled\n#\n# WARNING: Cannot safely be disabled once enabled.\n# See: https://knative.dev/docs/serving/feature-flags/#kubernetes-priority-class-name\nkubernetes.podspec-priorityclassname: \"disabled\"\n\n# Indicates whether Kubernetes SchedulerName support is enabled\n#\n# WARNING: Cannot safely be disabled once enabled.\n# See: https://knative.dev/docs/serving/feature-flags/#kubernetes-scheduler-name\nkubernetes.podspec-schedulername: \"disabled\"\n\n# This feature flag allows end-users to add a subset of capabilities on the Pod's SecurityContext.\n#\n# When set to \"enabled\" or \"allowed\" it allows capabilities to be added to the container.\n# For a list of possible capabilities, see https://man7.org/linux/man-pages/man7/capabilities.7.html\nkubernetes.containerspec-addcapabilities: \"disabled\"\n\n# This feature validates PodSpecs from the validating webhook\n# against the K8s API Server.\n#\n# When \"enabled\", the server will always run the extra validation.\n# When \"allowed\", the server will not run the dry-run validation by default.\n#   However, clients may enable the behavior on an individual Service by\n#   attaching the following metadata annotation: \"features.knative.dev/podspec-dryrun\":\"enabled\".\n# See: https://knative.dev/docs/serving/feature-flags/#kubernetes-dry-run\nkubernetes.podspec-dryrun: \"allowed\"\n\n# Controls whether tag header based routing feature are enabled or not.\n# 1. Enabled: enabling tag header based routing\n# 2. Disabled: disabling tag header based routing\n# See: https://knative.dev/docs/serving/feature-flags/#tag-header-based-routing\ntag-header-based-routing: \"disabled\"\n\n# Controls whether http2 auto-detection should be enabled or not.\n# 1. Enabled: http2 connection will be attempted via upgrade.\n# 2. Disabled: http2 connection will only be attempted when port name is set to \"h2c\".\nautodetect-http2: \"disabled\"\n\n# Controls whether volume support for EmptyDir is enabled or not.\n# 1. Enabled: enabling EmptyDir volume support\n# 2. Disabled: disabling EmptyDir volume support\nkubernetes.podspec-volumes-emptydir: \"enabled\"\n\n# Controls whether init containers support is enabled or not.\n# 1. Enabled: enabling init containers support\n# 2. Disabled: disabling init containers support\nkubernetes.podspec-init-containers: \"disabled\"\n\n# Controls whether persistent volume claim support is enabled or not.\n# 1. Enabled: enabling persistent volume claim support\n# 2. Disabled: disabling persistent volume claim support\nkubernetes.podspec-persistent-volume-claim: \"disabled\"\n\n# Controls whether write access for persistent volumes is enabled or not.\n# 1. Enabled: enabling write access for persistent volumes\n# 2. Disabled: disabling write access for persistent volumes\nkubernetes.podspec-persistent-volume-write: \"disabled\"\n\n# Controls if the queue proxy podInfo feature is enabled, allowed or disabled\n#\n# This feature should be enabled/allowed when using queue proxy Options (Extensions)\n# Enabling will mount a podInfo volume to the queue proxy container.\n# The volume will contains an 'annotations' file (from the pod's annotation field).\n# The annotations in this file include the Service annotations set by the client creating the service.\n# If mounted, the annotations can be accessed by queue proxy extensions at /etc/podinfo/annnotations\n#\n# 1. \"enabled\": always mount a podInfo volume\n# 2. \"disabled\": never mount a podInfo volume\n# 3. \"allowed\": by default, do not mount a podInfo volume\n#   However, a client may mount the podInfo volume on an individual Service by attaching\n#   the following metadata annotation to the Service: \"features.knative.dev/queueproxy-podinfo\":\"enabled\".\n#\n# NOTE THAT THIS IS AN EXPERIMENTAL / ALPHA FEATURE\nqueueproxy.mount-podinfo: \"disabled\"\n\n# Default queue proxy resource requests and limits to good values for most cases if set.\nqueueproxy.resource-defaults: \"disabled\""},"kind":"ConfigMap","metadata":{"annotations":{"knative.dev/example-checksum":"f2fc138e"},"labels":{"app.kubernetes.io/component":"controller","app.kubernetes.io/name":"knative-serving","app.kubernetes.io/version":"1.12.4"},"name":"config-features","namespace":"knative-serving"}}
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/name: knative-serving
+    app.kubernetes.io/version: 1.12.4
+  name: config-features
+  namespace: knative-serving
