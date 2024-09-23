@@ -42,6 +42,7 @@ sudo -H -E -u ubuntu bash -c 'helm install solver nebulous/nebulous-optimiser-so
   --set activemq.ACTIVEMQ_PORT=$BROKER_PORT'
 
 sudo -H -E -u ubuntu bash -c 'helm install solver nebulous/nebulous-influxdb'
+sudo -H -E -u ubuntu bash -c 'helm install solver nebulous/nebulous-activemq'
 sudo -H -E -u ubuntu bash -c 'helm install solver nebulous/nebulous-lstm-predictor'
 sudo -H -E -u ubuntu bash -c 'helm install solver nebulous/nebulous-monitoring-data-persistor'
 sudo -H -E -u ubuntu bash -c 'helm install solver nebulous/nebulous-prediction-orchestrator'
