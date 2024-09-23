@@ -41,6 +41,13 @@ sudo -H -E -u ubuntu bash -c 'helm install solver nebulous/nebulous-optimiser-so
   --set activemq.ACTIVEMQ_HOST=$BROKER_ADDRESS \
   --set activemq.ACTIVEMQ_PORT=$BROKER_PORT'
 
+sudo -H -E -u ubuntu bash -c 'helm install solver nebulous/nebulous-influxdb'
+sudo -H -E -u ubuntu bash -c 'helm install solver nebulous/nebulous-lstm-predictor'
+sudo -H -E -u ubuntu bash -c 'helm install solver nebulous/nebulous-monitoring-data-persistor'
+sudo -H -E -u ubuntu bash -c 'helm install solver nebulous/nebulous-prediction-orchestrator'
+sudo -H -E -u ubuntu bash -c 'helm install solver nebulous/nebulous-slo-violation-detector'
+sudo -H -E -u ubuntu bash -c 'helm install solver nebulous/nebulous-exponential-smoothing-predictor'
+
 echo "Add volumes provisioner"
 sudo -H -u ubuntu bash -c "kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.27/deploy/local-path-storage.yaml"  
 
