@@ -1,0 +1,14 @@
+crds:
+  install: true
+  keep: false
+workflow:
+  serviceAccount:
+    create: true
+    name: "argo"
+  rbac:
+    create: true
+controller:
+  workflowNamespaces:
+    - argo
+server:
+  authModes: ['server']
