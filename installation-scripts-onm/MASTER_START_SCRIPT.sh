@@ -113,7 +113,9 @@ fi
 if [ "$WORKFLOW_ENABLED" == "yes" ]; then
   echo "Workflow installation.";
 
-  helm install argo-workflows argo-workflows --repo https://argoproj.github.io/argo-helm --namespace argo --create-namespace --values workflow/workflow.yaml;
+  wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/main/workflow/workflow.yaml
+
+  helm install argo-workflows argo-workflows --repo https://argoproj.github.io/argo-helm --namespace argo --create-namespace --values workflow.yaml;
   
   kubectl -n argo create rolebinding argo-workflows-server --role=argo-workflows-workflow --serviceaccount=argo:argo-workflows-server;
   kubectl -n argo create rolebinding argo-workflows-workflow-controller --role=argo-workflows-workflow --serviceaccount=argo:argo-workflows-workflow-controller;
