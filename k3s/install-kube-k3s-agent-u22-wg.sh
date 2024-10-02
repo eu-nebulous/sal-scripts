@@ -12,7 +12,7 @@ sudo touch $LOGFILE
 sudo chown $USER:$USER $LOGFILE
 
 WIREGUARD_SERVER=192.168.55.1
-NODE_TOKEN=${APPLICATION_ID}
+NODE_TOKEN=$1
 K3S_VERSION=v1.26.15+k3s1
 
 # All the output of this shell script is redirected to the LOGFILE
