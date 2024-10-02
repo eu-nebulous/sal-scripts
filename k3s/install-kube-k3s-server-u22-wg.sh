@@ -15,9 +15,7 @@ sudo chown $USER:$USER $LOGFILE
 K3S_DEP_PATH=$HOME/k3s
 CILIUM_VERSION=1.15.5
 POD_CIDR=10.244.0.0/16
-
-# Create K3s Dependencies folder
-mkdir -p $K3S_DEP_PATH
+K3S_VERSION=v1.26.15+k3s1
 
 # All the output of this shell script is redirected to the LOGFILE
 exec 3>&1 4>&2
@@ -34,7 +32,7 @@ log_print(){
 
 log_print INFO "Installing k3s server"
 WIREGUARD_VPN_IP=`ip a | grep wg | grep inet | awk '{print $2}' | cut -d'/' -f1`
-curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.26.15+k3s1  INSTALL_K3S_EXEC="--flannel-backend=none --disable-network-policy --bind-address ${WIREGUARD_VPN_IP} --node-ip ${WIREGUARD_VPN_IP} --write-kubeconfig-mode 644" sh -
+curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=${K3S_VERSION}  INSTALL_K3S_EXEC="--cluster-cidr ${POD_CIDR} --token ${APPLICATION_ID} --flannel-backend=none --disable-network-policy --bind-address ${WIREGUARD_VPN_IP} --node-ip ${WIREGUARD_VPN_IP} --write-kubeconfig-mode 644" sh -
 export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 
 log_print INFO "Setting NODE_TOKEN environmental variable (default expiry 1d)"
