@@ -62,7 +62,7 @@ Check_lock
 log_print INFO "Installing curl"
 sudo apt-get install -y curl || { log_print ERROR "curl installation failed!"; exit $EXITCODE; }
 
-# Turn off the swap momery
+# Turn off the swap memory
 log_print INFO "Turning swap off...."
 if [ `grep Swap /proc/meminfo | grep SwapTotal: | cut -d" " -f14` == "0" ];
 then

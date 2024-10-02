@@ -11,8 +11,9 @@ LOGFILE="/var/log/install-kube-k3s-agent-u22-wg.$PID.log"
 sudo touch $LOGFILE
 sudo chown $USER:$USER $LOGFILE
 
-WIREGUARD_SERVER=$1
-NODE_TOKEN=$2
+WIREGUARD_SERVER=192.168.55.1
+NODE_TOKEN=${APPLICATION_ID}
+K3S_VERSION=v1.26.15+k3s1
 
 # All the output of this shell script is redirected to the LOGFILE
 exec 3>&1 4>&2
@@ -30,7 +31,7 @@ log_print(){
 log_print INFO "Installing k3s agent"
 WIREGUARD_VPN_IP=`ip a | grep wg | grep inet | awk '{print $2}' | cut -d'/' -f1`
 
-curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.26.15+k3s1 K3S_URL="https://${WIREGUARD_SERVER}:6443" K3S_TOKEN=${NODE_TOKEN} INSTALL_K3S_EXEC="--node-ip $WIREGUARD_VPN_IP" sh -
+curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=${K3S_VERSION} K3S_URL="https://${WIREGUARD_SERVER}:6443" K3S_TOKEN=${NODE_TOKEN} INSTALL_K3S_EXEC="--node-ip $WIREGUARD_VPN_IP" sh -
 
 # Declare configuration done successfully
 ENDTIME=$(date +%s)
