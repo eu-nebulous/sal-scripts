@@ -1,6 +1,9 @@
 #!/bin/bash
 echo "Master start script"
 
+echo 'export KUBECONFIG=/etc/rancher/k3s/k3s.yaml' >> /home/ubuntu/.profile
+source /home/ubuntu/.profile
+
 echo "Installing Vela CLI"
 sudo -H -u ubuntu bash -c 'curl -fsSl https://kubevela.io/script/install.sh | bash'
 echo "Configuration complete."
