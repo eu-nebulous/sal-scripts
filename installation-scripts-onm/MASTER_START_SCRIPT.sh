@@ -2,29 +2,29 @@
 echo "Master start script"
 
 # dau - do as ubuntu
-alias dau="sudo -H -E -u ubuntu"
+dau="sudo -H -E -u ubuntu"
 
 export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 
 echo "Installing Vela CLI"
-dau bash -c 'curl -fsSl https://kubevela.io/script/install.sh | bash'
+$dau bash -c 'curl -fsSl https://kubevela.io/script/install.sh | bash'
 echo "Configuration complete."
 
 echo "Setting KubeVela..."
-dau bash -c 'helm repo add kubevela https://kubevela.github.io/charts && helm repo update'
-dau bash -c 'nohup vela install --version 1.9.11 > /home/ubuntu/vela.txt 2>&1 &'
+$dau bash -c 'helm repo add kubevela https://kubevela.github.io/charts && helm repo update'
+$dau bash -c 'nohup vela install --version 1.9.11 > /home/ubuntu/vela.txt 2>&1 &'
 
-dau bash -c 'helm repo add nebulous https://eu-nebulous.github.io/helm-charts/'
+$dau bash -c 'helm repo add nebulous https://eu-nebulous.github.io/helm-charts/'
 
-dau bash -c 'helm repo add netdata https://netdata.github.io/helmchart/'
+$dau bash -c 'helm repo add netdata https://netdata.github.io/helmchart/'
 
-dau bash -c 'helm repo update'
+$dau bash -c 'helm repo update'
 
 echo "Login to docker registry"
-dau bash -c "kubectl create secret docker-registry regcred --docker-server=$PRIVATE_DOCKER_REGISTRY_SERVER --docker-username=$PRIVATE_DOCKER_REGISTRY_USERNAME --docker-password=$PRIVATE_DOCKER_REGISTRY_PASSWORD --docker-email=$PRIVATE_DOCKER_REGISTRY_EMAIL"
+$dau bash -c "kubectl create secret docker-registry regcred --docker-server=$PRIVATE_DOCKER_REGISTRY_SERVER --docker-username=$PRIVATE_DOCKER_REGISTRY_USERNAME --docker-password=$PRIVATE_DOCKER_REGISTRY_PASSWORD --docker-email=$PRIVATE_DOCKER_REGISTRY_EMAIL"
 
 echo "Starting EMS"
-  dau bash -c 'helm install ems nebulous/ems-server \
+$dau bash -c 'helm install ems nebulous/ems-server \
   --set tolerations[0].key="node-role.kubernetes.io/control-plane" \
   --set tolerations[0].operator="Exists" \
   --set tolerations[0].effect="NoSchedule" \
@@ -34,10 +34,10 @@ echo "Starting EMS"
   --set broker_port=$BROKER_PORT'
 
 
-dau bash -c 'helm install netdata netdata/netdata'
+$dau bash -c 'helm install netdata netdata/netdata'
 
 echo "Starting Solver"
-dau bash -c 'helm install solver nebulous/nebulous-optimiser-solver \
+$dau bash -c 'helm install solver nebulous/nebulous-optimiser-solver \
   --set tolerations[0].key="node-role.kubernetes.io/control-plane" \
   --set tolerations[0].operator="Exists" \
   --set tolerations[0].effect="NoSchedule" \
@@ -47,7 +47,7 @@ dau bash -c 'helm install solver nebulous/nebulous-optimiser-solver \
   --set activemq.ACTIVEMQ_PORT=$BROKER_PORT'
 
 echo "Add volumes provisioner"
-dau bash -c "kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.27/deploy/local-path-storage.yaml"  
+$dau bash -c "kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.27/deploy/local-path-storage.yaml"  
 
 if [ "$SERVERLESS_ENABLED" == "yes" ]; then
   echo "Serverless installation."
