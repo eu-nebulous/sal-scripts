@@ -5,6 +5,7 @@ echo "Master start script"
 dau="sudo -H -E -u ubuntu"
 
 export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+echo "KUBECONFIG=${KUBECONFIG}" | sudo tee -a /etc/environment
 
 echo "Installing Vela CLI"
 $dau bash -c 'curl -fsSl https://kubevela.io/script/install.sh | bash'
