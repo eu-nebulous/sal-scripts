@@ -109,3 +109,28 @@ if [ "$SERVERLESS_ENABLED" == "yes" ]; then
   kubectl apply -f https://raw.githubusercontent.com/kubevela/samples/master/06.Knative_App/componentdefinition-knative-serving.yaml
   echo "Serverless installation completed."
 fi
+
+if [ "$WORKFLOW_ENABLED" == "yes" ]; then
+  echo "Workflow installation.";
+
+  sudo -H -E -u ubuntu bash -c 'helm install argo-workflows argo-workflows \
+    --repo https://argoproj.github.io/argo-helm \
+    --namespace argo \
+    --create-namespace \
+    --set crds.install=true \
+    --set crds.keep=false \
+    --set workflow.serviceAccount.create=true \
+    --set workflow.serviceAccount.name="argo" \
+    --set workflow.rbac.create=true \
+    --set "controller.workflowNamespaces={argo}" \
+    --set controller.metricsConfig.enabled=true \
+    --set controller.telemetryConfig.enabled=true \
+    --set controller.serviceMonitor.enabled=true \
+    --set "server.authModes={server}"'
+  
+  sudo -H -E -u ubuntu bash -c 'kubectl -n argo create rolebinding argo-workflows-server --role=argo-workflows-workflow --serviceaccount=argo:argo-workflows-server'
+  sudo -H -E -u ubuntu bash -c 'kubectl -n argo create rolebinding argo-workflows-workflow-controller --role=argo-workflows-workflow --serviceaccount=argo:argo-workflows-workflow-controller'
+  sudo -H -E -u ubuntu bash -c 'kubectl -n argo create rolebinding default --role=argo-workflows-workflow --serviceaccount=argo:default'
+
+  echo "Workflow installation completed.";
+fi
