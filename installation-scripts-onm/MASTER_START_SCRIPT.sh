@@ -79,13 +79,13 @@ if [ "$SERVERLESS_ENABLED" == "yes" ]; then
   kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1.12.4/serving-core.yaml
 
   # Download and apply Kourier
-  wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/main/serverless/kourier.yaml
+  wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/r1/serverless/kourier.yaml
   kubectl apply -f kourier.yaml
 
-  wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/main/serverless/serverless-platform-definition.yaml
+  wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/r1/serverless/serverless-platform-definition.yaml
   kubectl apply -f serverless-platform-definition.yaml
 
-  wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/main/serverless/config-features.yaml
+  wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/r1/serverless/config-features.yaml
   kubectl apply -f config-features.yaml
 
   # Patch config-domain with PUBLIC_IP
