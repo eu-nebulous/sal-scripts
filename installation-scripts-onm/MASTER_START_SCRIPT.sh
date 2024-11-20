@@ -50,6 +50,7 @@ sudo -H -u ubuntu bash -c 'helm install netdata netdata/netdata'
 
 echo "Starting Solver"
 sudo -H -E -u ubuntu bash -c 'helm install solver nebulous/nebulous-optimiser-solver \
+  --set image.tag=r1 \
   --set tolerations[0].key="node-role.kubernetes.io/control-plane" \
   --set tolerations[0].operator="Exists" \
   --set tolerations[0].effect="NoSchedule" \
