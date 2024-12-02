@@ -29,7 +29,16 @@ log_print(){
 }
 
 log_print INFO "Installing k3s agent"
-WIREGUARD_VPN_IP=`ip a | grep wg | grep inet | awk '{print $2}' | cut -d'/' -f1`
+
+while true; do
+    WIREGUARD_VPN_IP=$(ip a | grep wg | grep inet | awk '{print $2}' | cut -d'/' -f1)
+    if [[ -n "$WIREGUARD_VPN_IP" ]]; then
+        log_print INFO "WIREGUARD_VPN_IP is set to $WIREGUARD_VPN_IP"
+        break
+    fi
+    log_print INFO "Waiting for WIREGUARD_VPN_IP to be set..."
+    sleep 1
+done
 
 curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=${K3S_VERSION} K3S_URL="https://${WIREGUARD_SERVER}:6443" K3S_TOKEN=${NODE_TOKEN} INSTALL_K3S_EXEC="--node-ip $WIREGUARD_VPN_IP" sh -
 
