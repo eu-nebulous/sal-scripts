@@ -32,7 +32,17 @@ log_print(){
 }
 
 log_print INFO "Installing k3s server for APPLICATION_ID: ${TOKEN}"
-WIREGUARD_VPN_IP=`ip a | grep wg | grep inet | awk '{print $2}' | cut -d'/' -f1`
+
+while true; do
+    WIREGUARD_VPN_IP=$(ip a | grep wg | grep inet | awk '{print $2}' | cut -d'/' -f1)
+    if [[ -n "$WIREGUARD_VPN_IP" ]]; then
+        echo "WIREGUARD_VPN_IP is set to $WIREGUARD_VPN_IP"
+        break
+    fi
+    echo "Waiting for WIREGUARD_VPN_IP to be set..."
+    sleep 1
+done
+
 curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=${K3S_VERSION}  INSTALL_K3S_EXEC="--cluster-cidr ${POD_CIDR} --token ${TOKEN} --flannel-backend=none --disable-network-policy --bind-address ${WIREGUARD_VPN_IP} --node-ip ${WIREGUARD_VPN_IP} --write-kubeconfig-mode 644" sh -
 export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 
