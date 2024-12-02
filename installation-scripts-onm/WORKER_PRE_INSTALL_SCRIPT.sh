@@ -17,10 +17,10 @@ echo ""
 while true; do
     WIREGUARD_VPN_IP=$(ip a | grep wg | grep inet | awk '{print $2}' | cut -d'/' -f1)
     if [[ -n "$WIREGUARD_VPN_IP" ]]; then
-        echo INFO "WIREGUARD_VPN_IP is set to $WIREGUARD_VPN_IP"
+        echo "WIREGUARD_VPN_IP is set to $WIREGUARD_VPN_IP"
         break
     fi
-    echo INFO "Waiting for WIREGUARD_VPN_IP to be set..."
+    echo "Waiting for WIREGUARD_VPN_IP to be set..."
     sleep 2
 done
 
