@@ -9,7 +9,7 @@ K3S_DEP_PATH=$HOME/k3s
 mkdir -p $K3S_DEP_PATH
 
 echo "Setting Wireguard Interface\n"
-sudo -H -u ubuntu bash -c 'wget https://raw.githubusercontent.com/eu-nebulous/overlay-network-manager/dev/network-manager/bootstrap-agent-scripts/onm/onm-bootstrap.sh -O onm-bootstrap.sh  && chmod +x onm-bootstrap.sh'
+sudo -H -u ubuntu bash -c 'wget https://raw.githubusercontent.com/eu-nebulous/overlay-network-manager/main/network-manager/bootstrap-agent-scripts/onm/onm-bootstrap.sh -O onm-bootstrap.sh  && chmod +x onm-bootstrap.sh'
 sudo -H -u ubuntu bash -c "./onm-bootstrap.sh 'CREATE' $APPLICATION_ID $ONM_URL $PUBLIC_IP $SSH_PORT";
 echo ""
 echo ""
