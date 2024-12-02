@@ -22,6 +22,7 @@ $dau bash -c 'helm repo add netdata https://netdata.github.io/helmchart/'
 $dau bash -c 'helm repo update'
 
 echo "Login to docker registry"
+$dau bash -c "kubectl delete secret docker-registry regcred --ignore-not-found"
 $dau bash -c "kubectl create secret docker-registry regcred --docker-server=$PRIVATE_DOCKER_REGISTRY_SERVER --docker-username=$PRIVATE_DOCKER_REGISTRY_USERNAME --docker-password=$PRIVATE_DOCKER_REGISTRY_PASSWORD --docker-email=$PRIVATE_DOCKER_REGISTRY_EMAIL"
 
 echo "Starting EMS"
