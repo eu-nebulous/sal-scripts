@@ -126,7 +126,21 @@ if [ "$WORKFLOW_ENABLED" == "yes" ]; then
     --set controller.metricsConfig.enabled=true \
     --set controller.telemetryConfig.enabled=true \
     --set controller.serviceMonitor.enabled=true \
-    --set "server.authModes={server}"'
+    --set "server.authModes={server}" \
+    --set "controller.tolerations[0].effect=NoSchedule" \
+    --set "controller.tolerations[0].key=node.kubernetes.io/unschedulable" \
+    --set "controller.tolerations[0].operator=Exists" \
+    --set "controller.tolerations[1].effect=NoSchedule" \
+    --set "controller.tolerations[1].operator=Exists" \
+    --set "controller.priorityClassName=system-node-critical" \
+    --set controller.nodeSelector.node-role\\.kubernetes\\.io/control-plane="" \
+    --set "server.tolerations[0].effect=NoSchedule" \
+    --set "server.tolerations[0].key=node.kubernetes.io/unschedulable" \
+    --set "server.tolerations[0].operator=Exists" \
+    --set "server.tolerations[1].effect=NoSchedule" \
+    --set "server.tolerations[1].operator=Exists" \
+    --set "server.priorityClassName=system-node-critical" \
+    --set server.nodeSelector.node-role\\.kubernetes\\.io/control-plane=""'
   
   sudo -H -E -u ubuntu bash -c 'kubectl -n argo create rolebinding argo-workflows-server --role=argo-workflows-workflow --serviceaccount=argo:argo-workflows-server'
   sudo -H -E -u ubuntu bash -c 'kubectl -n argo create rolebinding argo-workflows-workflow-controller --role=argo-workflows-workflow --serviceaccount=argo:argo-workflows-workflow-controller'
