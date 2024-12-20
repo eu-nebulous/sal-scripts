@@ -6,7 +6,14 @@ sudo -H -u ubuntu bash -c 'wget https://raw.githubusercontent.com/eu-nebulous/ov
 sudo -H -u ubuntu bash -c "./onm-bootstrap.sh 'CREATE' $APPLICATION_ID $ONM_URL $PUBLIC_IP $SSH_PORT";
 echo ""
 echo ""
-sleep 60
 
-WIREGUARD_VPN_IP=`ip a | grep wg | grep inet | awk '{print $2}' | cut -d'/' -f1`;
-echo "WIREGUARD_VPN_IP= $WIREGUARD_VPN_IP";
+
+while true; do
+    WIREGUARD_VPN_IP=$(ip a | grep wg | grep inet | awk '{print $2}' | cut -d'/' -f1)
+    if [[ -n "$WIREGUARD_VPN_IP" ]]; then
+        echo INFO "WIREGUARD_VPN_IP is set to $WIREGUARD_VPN_IP"
+        break
+    fi
+    echo INFO "Waiting for WIREGUARD_VPN_IP to be set..."
+    sleep 2
+done
