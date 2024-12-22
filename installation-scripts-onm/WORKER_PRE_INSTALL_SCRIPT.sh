@@ -6,7 +6,14 @@ sudo -H -u ubuntu bash -c 'wget https://raw.githubusercontent.com/eu-nebulous/ov
 
 if [[ -v NEB_PREV_APP_ID ]]; then
     echo "NEB_PREV_APP_ID is $NEB_PREV_APP_ID. DELETE"
-    sudo -H -u ubuntu bash -c "./onm-bootstrap.sh 'DELETE' $NEB_PREV_APP_ID $ONM_URL";
+    sudo -H -u ubuntu bash -c "./onm-bootstrap.sh 'DELETE' $NEB_PREV_APP_ID $ONM_URL";    
+fi
+
+WIREGUARD_VPN_IP=$(ip a | grep wg | grep inet | awk '{print $2}' | cut -d'/' -f1)
+if [[ -n "$WIREGUARD_VPN_IP" ]]; then
+    WG_NODE_INTERFACE="wg$(ip a | grep wg | grep inet | awk '{print $2}' | cut -d'/' -f1)"
+    sudo -H -u ubuntu bash -c 'wget https://raw.githubusercontent.com/eu-nebulous/overlay-network-manager/main/network-manager/bootstrap-agent-scripts/wireguard/wg-deregister-node.sh && chmod +x wg-deregister-node.sh'
+    sudo -H -u ubuntu bash -c "./wg-deregister-node.sh ubuntu $WG_NODE_INTERFACE";
 fi
 
 echo "export NEB_PREV_APP_ID=$APPLICATION_ID" >> /home/ubuntu/.profile
