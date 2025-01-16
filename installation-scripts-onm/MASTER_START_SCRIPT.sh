@@ -146,5 +146,8 @@ if [ "$WORKFLOW_ENABLED" == "yes" ]; then
   sudo -H -E -u ubuntu bash -c 'kubectl -n argo create rolebinding argo-workflows-workflow-controller --role=argo-workflows-workflow --serviceaccount=argo:argo-workflows-workflow-controller'
   sudo -H -E -u ubuntu bash -c 'kubectl -n argo create rolebinding default --role=argo-workflows-workflow --serviceaccount=argo:default'
 
+  sudo -H -u ubuntu bash -c 'kubectl -n argo create secret docker-registry regcred --docker-server=$PRIVATE_DOCKER_REGISTRY_SERVER --docker-username=$PRIVATE_DOCKER_REGISTRY_USERNAME --docker-password=$PRIVATE_DOCKER_REGISTRY_PASSWORD --docker-email=$PRIVATE_DOCKER_REGISTRY_EMAIL'
+  sudo -H -u ubuntu bash -c 'kubectl -n argo patch serviceaccount default -p "{"imagePullSecrets": [{"name": "regcred"}]}"'
+
   echo "Workflow installation completed.";
 fi
