@@ -4,7 +4,7 @@ echo "Worker pre-install script"
 echo "Setting hostname\n"
 sudo hostnamectl set-hostname "$variables_PA_JOB_NAME"
 
-K3S_DEP_PATH=$HOME/k3s
+K3S_DEP_PATH=/home/ubuntu/k3s
 echo "Create K3s Dependencies folder $K3S_DEP_PATH\n"
 sudo -H -u ubuntu bash -c "mkdir -p $K3S_DEP_PATH"
 
