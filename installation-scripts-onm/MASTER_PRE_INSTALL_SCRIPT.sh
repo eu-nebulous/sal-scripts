@@ -4,9 +4,8 @@ echo "Master pre-install script\n"
 echo "Setting hostname\n"
 sudo hostnamectl set-hostname "$variables_PA_JOB_NAME"
 
-K3S_DEP_PATH=$HOME/k3s
-echo "Create K3s Dependencies folder $K3S_DEP_PATH\n"
-sudo -H -u ubuntu bash -c "mkdir -p $K3S_DEP_PATH"
+echo "Create K3s Dependencies folder $HOME/k3s\n"
+sudo -H -u ubuntu bash -c "mkdir -p $HOME/k3s"
 
 echo "Setting Wireguard Interface\n"
 sudo -H -u ubuntu bash -c 'wget https://raw.githubusercontent.com/eu-nebulous/overlay-network-manager/main/network-manager/bootstrap-agent-scripts/onm/onm-bootstrap.sh -O onm-bootstrap.sh  && chmod +x onm-bootstrap.sh'
@@ -27,5 +26,5 @@ done
 
 
 echo "Executing k3s-preinstall script\n"
-sudo -H -u ubuntu bash -c "wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/dev/k3s/preinstall-kube-k3s-u22.sh -O ${K3S_DEP_PATH}/preinstall-kube-k3s-u22.sh  && chmod +x $K3S_DEP_PATH/preinstall-kube-k3s-u22.sh && $K3S_DEP_PATH/preinstall-kube-k3s-u22.sh"
-sudo -H -u ubuntu bash -c "$K3S_DEP_PATH/preinstall-kube-k3s-u22.sh"
+sudo -H -u ubuntu bash -c "wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/dev/k3s/preinstall-kube-k3s-u22.sh -O ${HOME}/k3s/preinstall-kube-k3s-u22.sh  && chmod +x $HOME/k3s/preinstall-kube-k3s-u22.sh && $HOME/k3s/preinstall-kube-k3s-u22.sh"
+sudo -H -u ubuntu bash -c "$HOME/k3s/preinstall-kube-k3s-u22.sh"
