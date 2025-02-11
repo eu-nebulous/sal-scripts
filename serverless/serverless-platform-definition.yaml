@@ -18,7 +18,9 @@ spec:
             }
           }
           replicas: *1 | int
+          env?: [...string] // or array of objects you can convert to text
         }
+        
         output: {
           apiVersion: "v1"
           kind: "ConfigMap"
@@ -26,8 +28,14 @@ spec:
             name: context.name
           }
           data: {
-            "cpu-request": parameter.resources.requests.cpu
-            "memory-request": parameter.resources.requests.memory
-            "replicas": "\(parameter.replicas)"
+            cpu-request:      parameter.resources.requests.cpu
+            memory-request:   parameter.resources.requests.memory
+            replicas:         "\(parameter.replicas)"
+
+            if parameter.env != _|_ {
+              env:            "\(parameter.env)"
+            }
           }
         }
+
+
