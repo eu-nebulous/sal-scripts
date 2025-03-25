@@ -8,27 +8,26 @@ dau="sudo -H -E -u ubuntu"
 if [[ "$CONTAINERIZATION_FLAVOR" == "k3s" ]]; then
   export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
   echo "KUBECONFIG=${KUBECONFIG}" | sudo tee -a /etc/environment
-else
-  WIREGUARD_VPN_IP=`ip a | grep wg | grep inet | awk '{print $2}' | cut -d'/' -f1`;
-  echo "WIREGUARD_VPN_IP=$WIREGUARD_VPN_IP";
-  sudo kubeadm init --apiserver-advertise-address ${WIREGUARD_VPN_IP} --service-cidr 10.96.0.0/16 --pod-network-cidr 10.244.0.0/16
-
-  echo "HOME: $(pwd), USERE: $(id -u -n)"
-  mkdir -p ~/.kube && sudo cp -i /etc/kubernetes/admin.conf ~/.kube/config && sudo chown $(id -u):$(id -g) ~/.kube/config
-  id -u ubuntu &> /dev/null
-
-  if [[ $? -eq 0 ]]
-  then
-      #USER ubuntu is found
-      mkdir -p /home/ubuntu/.kube && sudo cp -i /etc/kubernetes/admin.conf /home/ubuntu/.kube/config && sudo chown ubuntu:ubuntu /home/ubuntu/.kube/config
-  else
-      echo "User Ubuntu is not found"
-  fi
-  #$dau kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml;
-  $dau bash -c 'helm repo add cilium https://helm.cilium.io/ && helm repo update'
-  $dau bash -c 'helm install cilium cilium/cilium --namespace kube-system --set encryption.enabled=true --set encryption.type=wireguard'
 fi
 
+WIREGUARD_VPN_IP=`ip a | grep wg | grep inet | awk '{print $2}' | cut -d'/' -f1`;
+echo "WIREGUARD_VPN_IP=$WIREGUARD_VPN_IP";
+sudo kubeadm init --apiserver-advertise-address ${WIREGUARD_VPN_IP} --service-cidr 10.96.0.0/16 --pod-network-cidr 10.244.0.0/16
+
+echo "HOME: $(pwd), USERE: $(id -u -n)"
+mkdir -p ~/.kube && sudo cp -i /etc/kubernetes/admin.conf ~/.kube/config && sudo chown $(id -u):$(id -g) ~/.kube/config
+id -u ubuntu &> /dev/null
+
+if [[ $? -eq 0 ]]
+then
+  #USER ubuntu is found
+  mkdir -p /home/ubuntu/.kube && sudo cp -i /etc/kubernetes/admin.conf /home/ubuntu/.kube/config && sudo chown ubuntu:ubuntu /home/ubuntu/.kube/config
+else
+  echo "User Ubuntu is not found"
+fi
+#$dau kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml;
+$dau bash -c 'helm repo add cilium https://helm.cilium.io/ && helm repo update'
+$dau bash -c 'helm install cilium cilium/cilium --namespace kube-system --set encryption.enabled=true --set encryption.type=wireguard'
 
 echo "Installing Vela CLI"
 $dau bash -c 'curl -fsSl https://kubevela.io/script/install.sh | bash'
