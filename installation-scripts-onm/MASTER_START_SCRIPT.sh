@@ -35,7 +35,13 @@ echo "Configuration complete."
 
 echo "Setting KubeVela..."
 $dau bash -c 'helm repo add kubevela https://kubevela.github.io/charts && helm repo update'
-$dau bash -H -u ubuntu bash -c 'vela install -y --version 1.9.11 > /home/ubuntu/vela.txt 2>&1 &'
+
+$dau bash -c 'helm install --version 1.9.11 --create-namespace -n vela-system kubevela kubevela/vela-core --wait \
+  --set affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key="node-role.kubernetes.io/control-plane" \
+  --set affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].operator="Exists" \
+  --set tolerations[0].key="node-role.kubernetes.io/control-plane" \
+  --set tolerations[0].operator="Exists" \
+  --set tolerations[0].effect="NoSchedule"'
 
 $dau bash -c 'helm repo add nebulous https://eu-nebulous.github.io/helm-charts/'
 
