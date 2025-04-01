@@ -34,7 +34,7 @@ done
 
 if [[ "$CONTAINERIZATION_FLAVOR" == "k3s" ]]; then
     echo "Executing k3s-preinstall script\n"
-    $dau bash -c "wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/dev/k3s/preinstall-kube-k3s-u22.sh -O ${K3S_DEP_PATH}/preinstall-kube-k3s-u22.sh  && chmod +x $K3S_DEP_PATH/preinstall-kube-k3s-u22.sh && $K3S_DEP_PATH/preinstall-kube-k3s-u22.sh"
+    $dau bash -c "wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/main/k3s/preinstall-kube-k3s-u22.sh -O ${K3S_DEP_PATH}/preinstall-kube-k3s-u22.sh  && chmod +x $K3S_DEP_PATH/preinstall-kube-k3s-u22.sh && $K3S_DEP_PATH/preinstall-kube-k3s-u22.sh"
     $dau bash -c "$K3S_DEP_PATH/preinstall-kube-k3s-u22.sh"
 fi
 
