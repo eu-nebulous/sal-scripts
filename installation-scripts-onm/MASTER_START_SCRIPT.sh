@@ -10,14 +10,21 @@ if [[ "$CONTAINERIZATION_FLAVOR" == "k3s" ]]; then
   echo "KUBECONFIG=${KUBECONFIG}" | sudo tee -a /etc/environment
 fi
 
-WIREGUARD_VPN_IP=`ip a | grep wg | grep inet | awk '{print $2}' | cut -d'/' -f1`;
-echo "WIREGUARD_VPN_IP=$WIREGUARD_VPN_IP";
+while true; do
+    WIREGUARD_VPN_IP=$(ip a | grep wg | grep inet | awk '{print $2}' | cut -d'/' -f1)
+    if [[ -n "$WIREGUARD_VPN_IP" ]]; then
+        echo INFO "WIREGUARD_VPN_IP is set to $WIREGUARD_VPN_IP"
+        break
+    fi
+    echo INFO "Waiting for WIREGUARD_VPN_IP to be set..."
+    sleep 2
+done
 sudo kubeadm init --apiserver-advertise-address ${WIREGUARD_VPN_IP} --service-cidr 10.96.0.0/16 --pod-network-cidr 10.244.0.0/16
 
 echo "HOME: $(pwd), USERE: $(id -u -n)"
 mkdir -p ~/.kube && sudo cp -i /etc/kubernetes/admin.conf ~/.kube/config && sudo chown $(id -u):$(id -g) ~/.kube/config
-id -u ubuntu &> /dev/null
 
+id -u ubuntu &> /dev/null
 if [[ $? -eq 0 ]]
 then
   #USER ubuntu is found
