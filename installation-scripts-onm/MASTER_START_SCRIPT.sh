@@ -21,8 +21,6 @@ while true; do
 done
 sudo kubeadm init --apiserver-advertise-address ${WIREGUARD_VPN_IP} --service-cidr 10.96.0.0/16 --pod-network-cidr 10.244.0.0/16
 
-echo "HOME: $(pwd), USERE: $(id -u -n)"
-mkdir -p ~/.kube && sudo cp -i /etc/kubernetes/admin.conf ~/.kube/config && sudo chown $(id -u):$(id -g) ~/.kube/config
 
 id -u ubuntu &> /dev/null
 if [[ $? -eq 0 ]]
