@@ -12,6 +12,3 @@ fi
 
 echo "Installing Helm..."
 $dau bash -c ' curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 && chmod 700 get_helm.sh && ./get_helm.sh'
-# Add KubeVela Helm repository and update
-$dau bash -c 'curl -fsSl https://kubevela.io/script/install.sh | bash'
-echo "Configuration complete."   
