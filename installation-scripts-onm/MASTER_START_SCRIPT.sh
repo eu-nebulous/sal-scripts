@@ -52,6 +52,7 @@ $dau bash -c 'helm repo add nebulous https://eu-nebulous.github.io/helm-charts/'
 
 $dau bash -c 'helm repo add netdata https://netdata.github.io/helmchart/'
 
+echo "Updating helm repositories"
 $dau bash -c 'helm repo update'
 
 echo "Login to docker registry"
@@ -60,7 +61,7 @@ $dau bash -c "kubectl create secret docker-registry regcred --docker-server=$PRI
 
 
 if [ "$COMPONENTS_IN_CLUSTER" == "yes" ]; then
-
+  echo "Installing nebulous components in cluster"
   if [[ -z "${NEBULOUS_MESSAGE_BRIDGE_PASSWORD}" ]]; then
       echo "ERROR: NEBULOUS_MESSAGE_BRIDGE_PASSWORD environment variable is not set"
       exit 1
@@ -111,6 +112,7 @@ if [ "$COMPONENTS_IN_CLUSTER" == "yes" ]; then
   echo "Generated INFLUXDB_ADMIN_TOKEN: $INFLUXDB_ADMIN_TOKEN"
 
   # install activemq app
+  echo "Installing ActiveMQ"
   $dau bash -c "helm install nebulous-activemq-app nebulous/nebulous-activemq-app \
   --set tolerations[0].key=\"node-role.kubernetes.io/control-plane\" \
   --set tolerations[0].operator=\"Exists\" \
@@ -121,23 +123,24 @@ if [ "$COMPONENTS_IN_CLUSTER" == "yes" ]; then
   --set brokerEnv[0].name=\"ARTEMIS_USER\" \
   --set brokerEnv[0].value=\"admin\" \
   --set brokerEnv[1].name=\"ARTEMIS_PASSWORD\" \
-  --set brokerEnv[1].value=\"$APP_BROKER_ADMIN_PASSWORD\" \
+  --set-string brokerEnv[1].value=\"$APP_BROKER_ADMIN_PASSWORD\" \
   --set brokerEnv[2].name=\"ACTIVEMQ_ADMIN_PASSWORD\" \
-  --set brokerEnv[2].value=\"$APP_BROKER_ADMIN_PASSWORD\" \
+  --set-string brokerEnv[2].value=\"$APP_BROKER_ADMIN_PASSWORD\" \
   --set brokerEnv[3].name=\"APPLICATION_ID\" \
-  --set brokerEnv[3].value=\"$APPLICATION_ID\" \
+  --set-string brokerEnv[3].value=\"$APPLICATION_ID\" \
   --set brokerEnv[4].name=\"NEBULOUS_MESSAGE_BRIDGE_PASSWORD\" \
-  --set brokerEnv[4].value=\"$NEBULOUS_MESSAGE_BRIDGE_PASSWORD\" \
+  --set-string brokerEnv[4].value=\"$NEBULOUS_MESSAGE_BRIDGE_PASSWORD\" \
   --set brokerEnv[5].name=\"NEBULOUS_CONTROL_PLANE_BROKER_ADDRESS\" \
-  --set brokerEnv[5].value=\"$BROKER_ADDRESS:$BROKER_PORT\" \
+  --set-string brokerEnv[5].value=\"$BROKER_ADDRESS:$BROKER_PORT\" \
   --set brokerEnv[6].name=\"APP_BROKER_ADDRESS\" \
-  --set brokerEnv[6].value=\"$app_broker_address:$app_broker_port\" \
+  --set-string brokerEnv[6].value=\"$app_broker_address:$app_broker_port\" \
   --set brokerEnv[7].name=\"ANONYMOUS_LOGIN\" \
-  --set brokerEnv[7].value=\"true\" \
+  --set-string brokerEnv[7].value=\"true\" \
   --set service.activemQNodePort=$app_broker_port \
   --set service.type=\"NodePort\""
   
   # install influxdb app
+  echo "Installing InfluxDB"
   $dau bash -c "helm install nebulous-influxdb-app nebulous/nebulous-influxdb-app \
   --set tolerations[0].key=\"node-role.kubernetes.io/control-plane\" \
   --set tolerations[0].operator=\"Exists\" \
@@ -148,23 +151,25 @@ if [ "$COMPONENTS_IN_CLUSTER" == "yes" ]; then
   --set service.type=\"NodePort\""
 
   # install ai anomaly detection app
+  echo "Installing AI Anomaly Detection"
   $dau bash -c "helm install nebulous-ai-anomaly-detection nebulous/nebulous-ai-anomaly-detection \
   --set tolerations[0].key=\"node-role.kubernetes.io/control-plane\" \
   --set tolerations[0].operator=\"Exists\" \
   --set tolerations[0].effect=\"NoSchedule\" \
   --set env[0].name=\"BROKER_ADDRESS\" \
-  --set env[0].value=\"nebulous-activemq\" \
+  --set-string env[0].value=\"nebulous-activemq\" \
   --set env[1].name=\"BROKER_PORT\" \
   --set-string env[1].value=61616 \
   --set env[2].name=\"BROKER_USERNAME\" \
-  --set env[2].value=\"admin\" \
+  --set-string env[2].value=\"admin\" \
   --set env[3].name=\"BROKER_PASSWORD\" \
-  --set env[3].value=\"$APP_BROKER_ADMIN_PASSWORD\" \
+  --set-string env[3].value=\"$APP_BROKER_ADMIN_PASSWORD\" \
   --set env[4].name=\"INFLUXDB_TOKEN\" \
-  --set env[4].value=\"$INFLUXDB_ADMIN_TOKEN\" \
+  --set-string env[4].value=\"$INFLUXDB_ADMIN_TOKEN\" \
   --set image.tag=\"main\""
 
   # install prediction orchestrator app
+  echo "Installing Prediction Orchestrator"
   $dau bash -c "helm install nebulous-prediction-orchestrator nebulous/nebulous-prediction-orchestrator \
   --set tolerations[0].key=\"node-role.kubernetes.io/control-plane\" \
   --set tolerations[0].operator=\"Exists\" \
@@ -176,6 +181,7 @@ if [ "$COMPONENTS_IN_CLUSTER" == "yes" ]; then
   --set image.tag=\"main\""
 
   # install lstm predictor app
+  echo "Installing LSTM Predictor"
   $dau bash -c "helm install nebulous-lstm-predictor nebulous/nebulous-lstm-predictor \
   --set tolerations[0].key=\"node-role.kubernetes.io/control-plane\" \
   --set tolerations[0].operator=\"Exists\" \
@@ -185,15 +191,16 @@ if [ "$COMPONENTS_IN_CLUSTER" == "yes" ]; then
   --set env[1].name=\"BROKER_PORT\" \
   --set-string env[1].value=61616 \
   --set env[2].name=\"BROKER_USERNAME\" \
-  --set env[2].value=\"admin\" \
+  --set-string env[2].value=\"admin\" \
   --set env[3].name=\"BROKER_PASSWORD\" \
-  --set env[3].value=\"$APP_BROKER_ADMIN_PASSWORD\" \
+  --set-string env[3].value=\"$APP_BROKER_ADMIN_PASSWORD\" \
   --set env[4].name=\"INFLUXDB_TOKEN\" \
-  --set env[4].value=\"$INFLUXDB_ADMIN_TOKEN\" \
+  --set-string env[4].value=\"$INFLUXDB_ADMIN_TOKEN\" \
   --set image.tag=\"main\" \
   --set resources.limits.memory=\"3Gi\""
 
   # install exponential smoothing predictor app
+  echo "Installing Exponential Smoothing Predictor"
   $dau bash -c "helm install nebulous-exponential-smoothing-predictor nebulous/nebulous-exponential-smoothing-predictor \
   --set tolerations[0].key=\"node-role.kubernetes.io/control-plane\" \
   --set tolerations[0].operator=\"Exists\" \
@@ -205,13 +212,14 @@ if [ "$COMPONENTS_IN_CLUSTER" == "yes" ]; then
   --set env[2].name=\"broker_username\" \
   --set env[2].value=\"admin\" \
   --set env[3].name=\"broker_password\" \
-  --set env[3].value=\"$APP_BROKER_ADMIN_PASSWORD\" \
+  --set-string env[3].value=\"$APP_BROKER_ADMIN_PASSWORD\" \
   --set env[4].name=\"INFLUXDB_TOKEN\" \
-  --set env[4].value=\"$INFLUXDB_ADMIN_TOKEN\" \
+  --set-string env[4].value=\"$INFLUXDB_ADMIN_TOKEN\" \
   --set image.tag=\"main\" \
   --set resources.limits.memory=\"3Gi\""
 
   # install slo violation detector app
+  echo "Installing SLO Violation Detector"
   $dau bash -c "helm install nebulous-slo-violation-detector nebulous/nebulous-slo-violation-detector \
   --set tolerations[0].key=\"node-role.kubernetes.io/control-plane\" \
   --set tolerations[0].operator=\"Exists\" \
@@ -227,6 +235,7 @@ if [ "$COMPONENTS_IN_CLUSTER" == "yes" ]; then
   --set image.tag=\"main\""
 
   # install monitoring data persistor app
+  echo "Installing Monitoring Data Persistor"
   $dau bash -c "helm install nebulous-monitoring-data-persistor nebulous/nebulous-monitoring-data-persistor \
   --set tolerations[0].key=\"node-role.kubernetes.io/control-plane\" \
   --set tolerations[0].operator=\"Exists\" \
@@ -238,12 +247,13 @@ if [ "$COMPONENTS_IN_CLUSTER" == "yes" ]; then
   --set env[2].name=\"broker_username\" \
   --set env[2].value=\"admin\" \
   --set env[3].name=\"broker_password\" \
-  --set env[3].value=\"$APP_BROKER_ADMIN_PASSWORD\" \
+  --set-string env[3].value=\"$APP_BROKER_ADMIN_PASSWORD\" \
   --set env[4].name=\"INFLUXDB_TOKEN\" \
-  --set env[4].value=\"$INFLUXDB_ADMIN_TOKEN\" \
+  --set-string env[4].value=\"$INFLUXDB_ADMIN_TOKEN\" \
   --set image.tag=\"main\""
 
   # install ems server
+  echo "Installing EMS"
   $dau bash -c "helm install ems nebulous/ems-server \
     --set tolerations[0].key=\"node-role.kubernetes.io/control-plane\" \
     --set tolerations[0].operator=\"Exists\" \
@@ -258,6 +268,7 @@ if [ "$COMPONENTS_IN_CLUSTER" == "yes" ]; then
   $dau bash -c "helm install netdata netdata/netdata"
 
   # install solver
+  echo "Installing Solver"
   $dau bash -c "helm install solver nebulous/nebulous-optimiser-solver \
     --set image.tag=\"main-1b2490b9130495c8364a1bfaf0c232b7f74ebbe4-20250505200209\" \
     --set tolerations[0].key=\"node-role.kubernetes.io/control-plane\" \
@@ -271,7 +282,7 @@ if [ "$COMPONENTS_IN_CLUSTER" == "yes" ]; then
     --set activemq.ACTIVEMQ_PASSWORD=\"$APP_BROKER_ADMIN_PASSWORD\""
 
 else
-  echo "Starting EMS"
+  echo "Installing EMS"
   $dau bash -c 'helm install ems nebulous/ems-server \
     --set tolerations[0].key="node-role.kubernetes.io/control-plane" \
     --set tolerations[0].operator="Exists" \
@@ -284,7 +295,7 @@ else
 
   $dau bash -c 'helm install netdata netdata/netdata'
 
-  echo "Starting Solver"
+  echo "Installing  Solver"
   $dau bash -c 'helm install solver nebulous/nebulous-optimiser-solver \
     --set tolerations[0].key="node-role.kubernetes.io/control-plane" \
     --set tolerations[0].operator="Exists" \
