@@ -278,10 +278,9 @@ if [ "$COMPONENTS_IN_CLUSTER" == "yes" ]; then
     --set amplLicense.keyValue=\"$LICENSE_AMPL\" \
     --set application.id=\"$APPLICATION_ID\" \
     --set activemq.ACTIVEMQ_HOST=\"nebulous-activemq\" \
-    --set activemq.ACTIVEMQ_PORT=\"61616\" \
-    --set activemq.ACTIVEMQ_USER=\"admin\" \
-    --set activemq.ACTIVEMQ_PASSWORD=\"$APP_BROKER_ADMIN_PASSWORD\""
-
+    --set activemq.ACTIVEMQ_PORT=\"61616\""
+    #--set activemq.ACTIVEMQ_USER=\"admin\""
+    #--set activemqSecret.keyValue=\"$APP_BROKER_ADMIN_PASSWORD\" \
 else
   echo "Installing EMS"
   $dau bash -c 'helm install ems nebulous/ems-server \
