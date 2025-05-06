@@ -270,7 +270,7 @@ if [ "$COMPONENTS_IN_CLUSTER" == "yes" ]; then
   # install solver
   echo "Installing Solver"
   $dau bash -c "helm install solver nebulous/nebulous-optimiser-solver \
-    --set image.tag=\"main-1b2490b9130495c8364a1bfaf0c232b7f74ebbe4-20250505200209\" \
+    --set image.tag=\"main\" \
     --set tolerations[0].key=\"node-role.kubernetes.io/control-plane\" \
     --set tolerations[0].operator=\"Exists\" \
     --set tolerations[0].effect=\"NoSchedule\" \
