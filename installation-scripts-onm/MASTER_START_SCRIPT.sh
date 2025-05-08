@@ -35,15 +35,14 @@ $dau bash -c 'helm repo add cilium https://helm.cilium.io/ && helm repo update'
 $dau bash -c 'helm install cilium cilium/cilium --namespace kube-system --set encryption.enabled=true --set encryption.type=wireguard'
 
 echo "Installing Vela CLI"
-#$dau bash -c 'curl -fsSl https://kubevela.io/script/install.sh | bash'
-$dau bash -c 'curl -fsSl https://kubevela.io/script/install-velad.sh | bash'
+$dau bash -c 'curl -fsSl https://kubevela.io/script/install.sh | bash'
 echo "Configuration complete."
 
 
 echo "Setting KubeVela..."
 $dau bash -c 'helm repo add kubevela https://kubevela.github.io/charts && helm repo update'
 
-$dau bash -c 'helm install --version 1.9.11 --create-namespace -n vela-system kubevela kubevela/vela-core \
+$dau bash -c 'helm install --debug --version 1.9.11 --create-namespace -n vela-system kubevela kubevela/vela-core --wait \
   --set affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key="node-role.kubernetes.io/control-plane" \
   --set affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].operator="Exists" \
   --set tolerations[0].key="node-role.kubernetes.io/control-plane" \
