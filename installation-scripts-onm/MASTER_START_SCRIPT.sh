@@ -1,42 +1,65 @@
 #!/bin/bash
 echo "Master start script"
-WIREGUARD_VPN_IP=`ip a | grep wg | grep inet | awk '{print $2}' | cut -d'/' -f1`;
-echo "WIREGUARD_VPN_IP=$WIREGUARD_VPN_IP";
 
-sudo kubeadm init --apiserver-advertise-address ${WIREGUARD_VPN_IP} --service-cidr 10.96.0.0/16 --pod-network-cidr 10.244.0.0/16
+# dau - do as ubuntu
+dau="sudo -H -E -u ubuntu"
 
-echo "HOME: $(pwd), USERE: $(id -u -n)"
-mkdir -p ~/.kube && sudo cp -i /etc/kubernetes/admin.conf ~/.kube/config && sudo chown $(id -u):$(id -g) ~/.kube/config
-id -u ubuntu &> /dev/null
 
-if [[ $? -eq 0 ]]
-then
-    #USER ubuntu is found
-    mkdir -p /home/ubuntu/.kube && sudo cp -i /etc/kubernetes/admin.conf /home/ubuntu/.kube/config && sudo chown ubuntu:ubuntu /home/ubuntu/.kube/config
-else
-    echo "User Ubuntu is not found"
+if [[ "$CONTAINERIZATION_FLAVOR" == "k3s" ]]; then
+  export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+  echo "KUBECONFIG=${KUBECONFIG}" | sudo tee -a /etc/environment
 fi
 
+while true; do
+    WIREGUARD_VPN_IP=$(ip a | grep wg | grep inet | awk '{print $2}' | cut -d'/' -f1)
+    if [[ -n "$WIREGUARD_VPN_IP" ]]; then
+        echo INFO "WIREGUARD_VPN_IP is set to $WIREGUARD_VPN_IP"
+        break
+    fi
+    echo INFO "Waiting for WIREGUARD_VPN_IP to be set..."
+    sleep 2
+done
+sudo kubeadm init --apiserver-advertise-address ${WIREGUARD_VPN_IP} --service-cidr 10.96.0.0/16 --pod-network-cidr 10.244.0.0/16
 
-#sudo -H -u ubuntu kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml;
-sudo -H -u ubuntu bash -c 'helm repo add cilium https://helm.cilium.io/ && helm repo update'
-sudo -H -u ubuntu bash -c 'helm install cilium cilium/cilium --namespace kube-system --set encryption.enabled=true --set encryption.type=wireguard'
+
+id -u ubuntu &> /dev/null
+if [[ $? -eq 0 ]]
+then
+  #USER ubuntu is found
+  mkdir -p /home/ubuntu/.kube && sudo cp -i /etc/kubernetes/admin.conf /home/ubuntu/.kube/config && sudo chown ubuntu:ubuntu /home/ubuntu/.kube/config
+else
+  echo "User Ubuntu is not found"
+fi
+#$dau kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml;
+$dau bash -c 'helm repo add cilium https://helm.cilium.io/ && helm repo update'
+$dau bash -c 'helm install cilium cilium/cilium --namespace kube-system --set encryption.enabled=true --set encryption.type=wireguard'
+
+echo "Installing Vela CLI"
+$dau bash -c 'curl -fsSl https://kubevela.io/script/install.sh | bash'
+echo "Configuration complete."
 
 echo "Setting KubeVela..."
-sudo -H -u ubuntu bash -c 'helm repo add kubevela https://kubevela.github.io/charts && helm repo update'
-sudo -H -u ubuntu bash -c 'nohup vela install -y --version 1.9.11 > /home/ubuntu/vela.txt 2>&1 &'
+$dau bash -c 'helm repo add kubevela https://kubevela.github.io/charts && helm repo update'
 
-sudo -H -u ubuntu bash -c 'helm repo add nebulous https://eu-nebulous.github.io/helm-charts/'
+$dau bash -c 'helm install --version 1.9.11 --create-namespace -n vela-system kubevela kubevela/vela-core --wait \
+  --set affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key="node-role.kubernetes.io/control-plane" \
+  --set affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].operator="Exists" \
+  --set tolerations[0].key="node-role.kubernetes.io/control-plane" \
+  --set tolerations[0].operator="Exists" \
+  --set tolerations[0].effect="NoSchedule"'
 
-sudo -H -u ubuntu bash -c 'helm repo add netdata https://netdata.github.io/helmchart/'
+$dau bash -c 'helm repo add nebulous https://eu-nebulous.github.io/helm-charts/'
 
-sudo -H -u ubuntu bash -c 'helm repo update'
+$dau bash -c 'helm repo add netdata https://netdata.github.io/helmchart/'
+
+$dau bash -c 'helm repo update'
 
 echo "Login to docker registry"
-sudo -H -u ubuntu bash -c "kubectl create secret docker-registry regcred --docker-server=$PRIVATE_DOCKER_REGISTRY_SERVER --docker-username=$PRIVATE_DOCKER_REGISTRY_USERNAME --docker-password=$PRIVATE_DOCKER_REGISTRY_PASSWORD --docker-email=$PRIVATE_DOCKER_REGISTRY_EMAIL"
+$dau bash -c "kubectl delete secret docker-registry regcred --ignore-not-found"
+$dau bash -c "kubectl create secret docker-registry regcred --docker-server=$PRIVATE_DOCKER_REGISTRY_SERVER --docker-username=$PRIVATE_DOCKER_REGISTRY_USERNAME --docker-password=$PRIVATE_DOCKER_REGISTRY_PASSWORD --docker-email=$PRIVATE_DOCKER_REGISTRY_EMAIL"
 
 echo "Starting EMS"
-  sudo -H -E -u ubuntu bash -c 'helm install ems nebulous/ems-server \
+$dau bash -c 'helm install ems nebulous/ems-server \
   --set tolerations[0].key="node-role.kubernetes.io/control-plane" \
   --set tolerations[0].operator="Exists" \
   --set tolerations[0].effect="NoSchedule" \
@@ -46,10 +69,10 @@ echo "Starting EMS"
   --set broker_port=$BROKER_PORT'
 
 
-sudo -H -u ubuntu bash -c 'helm install netdata netdata/netdata'
+$dau bash -c 'helm install netdata netdata/netdata'
 
 echo "Starting Solver"
-sudo -H -E -u ubuntu bash -c 'helm install solver nebulous/nebulous-optimiser-solver \
+$dau bash -c 'helm install solver nebulous/nebulous-optimiser-solver \
   --set tolerations[0].key="node-role.kubernetes.io/control-plane" \
   --set tolerations[0].operator="Exists" \
   --set tolerations[0].effect="NoSchedule" \
@@ -59,7 +82,7 @@ sudo -H -E -u ubuntu bash -c 'helm install solver nebulous/nebulous-optimiser-so
   --set activemq.ACTIVEMQ_PORT=$BROKER_PORT'
 
 echo "Add volumes provisioner"
-sudo -H -u ubuntu bash -c "kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.27/deploy/local-path-storage.yaml"  
+$dau bash -c "kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.27/deploy/local-path-storage.yaml"  
 
 if [ "$SERVERLESS_ENABLED" == "yes" ]; then
   echo "Serverless installation."
@@ -127,7 +150,7 @@ fi
 if [ "$WORKFLOW_ENABLED" == "yes" ]; then
   echo "Workflow installation.";
 
-  sudo -H -E -u ubuntu bash -c 'helm install argo-workflows argo-workflows \
+  $dau bash -c 'helm install argo-workflows argo-workflows \
     --repo https://argoproj.github.io/argo-helm \
     --namespace argo \
     --create-namespace \
@@ -160,8 +183,8 @@ if [ "$WORKFLOW_ENABLED" == "yes" ]; then
   sudo -H -E -u ubuntu bash -c 'kubectl -n argo create rolebinding argo-workflows-workflow-controller --role=argo-workflows-workflow --serviceaccount=argo:argo-workflows-workflow-controller'
   sudo -H -E -u ubuntu bash -c 'kubectl -n argo create rolebinding default --role=argo-workflows-workflow --serviceaccount=argo:default'
 
-  sudo -H -u ubuntu bash -c "kubectl -n argo create secret docker-registry regcred --docker-server=$PRIVATE_DOCKER_REGISTRY_SERVER --docker-username=$PRIVATE_DOCKER_REGISTRY_USERNAME --docker-password=$PRIVATE_DOCKER_REGISTRY_PASSWORD --docker-email=$PRIVATE_DOCKER_REGISTRY_EMAIL"
-  sudo -H -u ubuntu bash -c 'kubectl -n argo patch serviceaccount default -p "{\"imagePullSecrets\": [{\"name\": \"regcred\"}]}"'
+  $dau bash -c "kubectl -n argo create secret docker-registry regcred --docker-server=$PRIVATE_DOCKER_REGISTRY_SERVER --docker-username=$PRIVATE_DOCKER_REGISTRY_USERNAME --docker-password=$PRIVATE_DOCKER_REGISTRY_PASSWORD --docker-email=$PRIVATE_DOCKER_REGISTRY_EMAIL"
+  $dau bash -c 'kubectl -n argo patch serviceaccount default -p "{\"imagePullSecrets\": [{\"name\": \"regcred\"}]}"'
 
   echo "Workflow installation completed.";
 fi
