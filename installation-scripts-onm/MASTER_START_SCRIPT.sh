@@ -107,7 +107,21 @@ if [ "$SERVERLESS_ENABLED" == "yes" ]; then
   kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1.12.4/serving-default-domain.yaml
 
   kubectl apply -f https://raw.githubusercontent.com/kubevela/samples/master/06.Knative_App/componentdefinition-knative-serving.yaml
-  echo "Serverless installation completed."
+
+  if [ -n "$LOCAL_SERVERLESS_SERVICES" ]; then
+    echo "LOCAL_SERVERLESS_SERVICES is set to: $LOCAL_SERVERLESS_SERVICES"
+
+    sudo wget -q -O /usr/local/bin/label-serverless-services.sh \
+      https://raw.githubusercontent.com/eu-nebulous/sal-scripts/main/serverless/label-serverless-services.sh
+
+    sudo chmod +x /usr/local/bin/label-serverless-services.sh
+
+    sudo touch /var/log/label-serverless-services.log
+    sudo chown ubuntu:ubuntu /var/log/label-serverless-services.log
+
+    nohup /usr/local/bin/label-serverless-services.sh \
+      >> /var/log/label-serverless-services.log 2>&1 &
+  fi
 fi
 
 if [ "$WORKFLOW_ENABLED" == "yes" ]; then
@@ -151,3 +165,4 @@ if [ "$WORKFLOW_ENABLED" == "yes" ]; then
 
   echo "Workflow installation completed.";
 fi
+
