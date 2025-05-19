@@ -42,12 +42,7 @@ echo "Configuration complete."
 echo "Setting KubeVela..."
 $dau bash -c 'helm repo add kubevela https://kubevela.github.io/charts && helm repo update'
 
-$dau bash -c 'helm install --debug --version 1.9.11 --create-namespace -n vela-system kubevela kubevela/vela-core --wait \
-  --set affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key="node-role.kubernetes.io/control-plane" \
-  --set affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].operator="Exists" \
-  --set tolerations[0].key="node-role.kubernetes.io/control-plane" \
-  --set tolerations[0].operator="Exists" \
-  --set tolerations[0].effect="NoSchedule"'
+$dau bash -c 'nohup vela install -y --version 1.9.11 > /home/ubuntu/vela.txt 2>&1 &'
 
 
 echo "Adding nebulous helm repositories"
@@ -55,9 +50,18 @@ $dau bash -c 'helm repo add nebulous https://eu-nebulous.github.io/helm-charts/'
 $dau bash -c 'helm repo add netdata https://netdata.github.io/helmchart/'
 $dau bash -c 'helm repo update'
 
-echo "Login to docker registry"
-$dau bash -c "kubectl delete secret docker-registry regcred --ignore-not-found"
-$dau bash -c "kubectl create secret docker-registry regcred --docker-server=$PRIVATE_DOCKER_REGISTRY_SERVER --docker-username=$PRIVATE_DOCKER_REGISTRY_USERNAME --docker-password=$PRIVATE_DOCKER_REGISTRY_PASSWORD --docker-email=$PRIVATE_DOCKER_REGISTRY_EMAIL"
+if [[ -n "${PRIVATE_DOCKER_REGISTRY_SERVER}" ]]; then
+    echo "Private Docker registry server is configured: ${PRIVATE_DOCKER_REGISTRY_SERVER}"
+    if [[ -z "${PRIVATE_DOCKER_REGISTRY_SERVER}" ]] || [[ -z "${PRIVATE_DOCKER_REGISTRY_USERNAME}" ]] || [[ -z "${PRIVATE_DOCKER_REGISTRY_PASSWORD}" ]] || [[ -z "${PRIVATE_DOCKER_REGISTRY_EMAIL}" ]]; then
+        echo "ERROR: One or more required Docker registry environment variables are not set or empty"
+        echo "Please ensure PRIVATE_DOCKER_REGISTRY_SERVER, PRIVATE_DOCKER_REGISTRY_USERNAME, PRIVATE_DOCKER_REGISTRY_PASSWORD, and PRIVATE_DOCKER_REGISTRY_EMAIL are properly configured"
+    fi
+    
+    echo "Login to docker registry"
+    $dau bash -c "kubectl delete secret docker-registry regcred --ignore-not-found"
+    $dau bash -c "kubectl create secret docker-registry regcred --docker-server=$PRIVATE_DOCKER_REGISTRY_SERVER --docker-username=$PRIVATE_DOCKER_REGISTRY_USERNAME --docker-password=$PRIVATE_DOCKER_REGISTRY_PASSWORD --docker-email=$PRIVATE_DOCKER_REGISTRY_EMAIL"
+
+fi
 
 
 if [ "$COMPONENTS_IN_CLUSTER" == "yes" ]; then
@@ -231,8 +235,9 @@ if [ "$COMPONENTS_IN_CLUSTER" == "yes" ]; then
   --set env[2].name=\"BROKER_USERNAME\" \
   --set env[2].value=\"admin\" \
   --set env[3].name=\"BROKER_PASSWORD\" \
-  --set env[3].value=\"$APP_BROKER_ADMIN_PASSWORD\" \
+  --set-string env[3].value=\"$APP_BROKER_ADMIN_PASSWORD\" \
   --set image.tag=\"main\""
+
 
   # install monitoring data persistor app
   echo "Installing Monitoring Data Persistor"
@@ -262,7 +267,7 @@ if [ "$COMPONENTS_IN_CLUSTER" == "yes" ]; then
     --set broker_address=\"nebulous-activemq\" \
     --set broker_port=\"61616\" \
     --set broker_username=\"admin\" \
-    --set broker_password=\"$APP_BROKER_ADMIN_PASSWORD\" \
+    --set-string broker_password=\"$APP_BROKER_ADMIN_PASSWORD\" \
     --set image.tag=\"latest\""
 
   $dau bash -c "helm install netdata netdata/netdata"
@@ -293,7 +298,6 @@ else
 
 
   $dau bash -c 'helm install netdata netdata/netdata'
-
   echo "Installing  Solver"
   $dau bash -c 'helm install solver nebulous/nebulous-optimiser-solver \
     --set tolerations[0].key="node-role.kubernetes.io/control-plane" \
