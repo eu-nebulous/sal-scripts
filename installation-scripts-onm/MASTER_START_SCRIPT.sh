@@ -182,6 +182,7 @@ if [ "$COMPONENTS_IN_CLUSTER" == "yes" ]; then
   --set application.env.exnHost=\"nebulous-activemq\" \
   --set application.env.exnUsername=\"admin\" \
   --set application.env.exnPassword=\"$APP_BROKER_ADMIN_PASSWORD\" \
+  --set application.env.influxToken='$INFLUXDB_TOKEN' \
   --set image.tag=\"main\""
 
   # install lstm predictor app
