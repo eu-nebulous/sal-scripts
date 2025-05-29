@@ -4,10 +4,10 @@ echo "Master pre-install script\n"
 # dau - do as ubuntu
 dau="sudo -H -E -u ubuntu"
 
-if [[ -z "$NEBULOUS_BRANCH" ]]; then
-    NEBULOUS_BRANCH="r1"
+if [[ -z "$NEBULOUS_SCRIPTS_BRANCH" ]]; then
+    NEBULOUS_SCRIPTS_BRANCH="r1"
 fi
-echo "NEBULOUS_BRANCH is set to: $NEBULOUS_BRANCH"
+echo "NEBULOUS_SCRIPTS_BRANCH is set to: $NEBULOUS_SCRIPTS_BRANCH"
 
 echo "Setting hostname\n"
 sudo hostnamectl set-hostname "$variables_PA_JOB_NAME"
@@ -21,7 +21,7 @@ fi
 
 
 echo "Setting Wireguard Interface\n"
-$dau bash -c "wget https://raw.githubusercontent.com/eu-nebulous/overlay-network-manager/$NEBULOUS_BRANCH/network-manager/bootstrap-agent-scripts/onm/onm-bootstrap.sh -O onm-bootstrap.sh  && chmod +x onm-bootstrap.sh"
+$dau bash -c "wget https://raw.githubusercontent.com/eu-nebulous/overlay-network-manager/$NEBULOUS_SCRIPTS_BRANCH/network-manager/bootstrap-agent-scripts/onm/onm-bootstrap.sh -O onm-bootstrap.sh  && chmod +x onm-bootstrap.sh"
 $dau bash -c "./onm-bootstrap.sh 'CREATE' $APPLICATION_ID $ONM_URL $PUBLIC_IP $SSH_PORT";
 echo ""
 echo ""
@@ -39,7 +39,7 @@ done
 
 if [[ "$CONTAINERIZATION_FLAVOR" == "k3s" ]]; then
     echo "Executing k3s-preinstall script\n"
-    $dau bash -c "wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/$NEBULOUS_BRANCH/k3s/preinstall-kube-k3s-u22.sh -O ${K3S_DEP_PATH}/preinstall-kube-k3s-u22.sh  && chmod +x $K3S_DEP_PATH/preinstall-kube-k3s-u22.sh && $K3S_DEP_PATH/preinstall-kube-k3s-u22.sh"
+    $dau bash -c "wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/$NEBULOUS_SCRIPTS_BRANCH/k3s/preinstall-kube-k3s-u22.sh -O ${K3S_DEP_PATH}/preinstall-kube-k3s-u22.sh  && chmod +x $K3S_DEP_PATH/preinstall-kube-k3s-u22.sh && $K3S_DEP_PATH/preinstall-kube-k3s-u22.sh"
     $dau bash -c "$K3S_DEP_PATH/preinstall-kube-k3s-u22.sh"
 fi
 
