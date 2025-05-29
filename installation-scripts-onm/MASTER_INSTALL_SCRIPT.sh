@@ -1,13 +1,19 @@
 #!/bin/bash
 echo "Master install script"
+
+if [[ -z "$NEBULOUS_BRANCH" ]]; then
+    NEBULOUS_BRANCH="r1"
+fi
+echo "NEBULOUS_BRANCH is set to: $NEBULOUS_BRANCH"
+
 # dau - do as ubuntu
 dau="sudo -H -E -u ubuntu"
 if [[ "$CONTAINERIZATION_FLAVOR" == "k3s" ]]; then
     echo "Installing K3s Server"
     K3S_DEP_PATH=/home/ubuntu/k3s
-    $dau bash -c "wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/main/k3s/install-kube-k3s-server-u22-wg.sh -O ${K3S_DEP_PATH}/install-kube-k3s-server-u22-wg.sh && chmod +x $K3S_DEP_PATH/install-kube-k3s-server-u22-wg.sh && $K3S_DEP_PATH/install-kube-k3s-server-u22-wg.sh $APPLICATION_ID"
+    $dau bash -c "wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/$NEBULOUS_BRANCH/k3s/install-kube-k3s-server-u22-wg.sh -O ${K3S_DEP_PATH}/install-kube-k3s-server-u22-wg.sh && chmod +x $K3S_DEP_PATH/install-kube-k3s-server-u22-wg.sh && $K3S_DEP_PATH/install-kube-k3s-server-u22-wg.sh $APPLICATION_ID"
 else
-    wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/main/k8s/install-kube-u22-wg.sh && chmod +x ./install-kube-u22-wg.sh && ./install-kube-u22-wg.sh
+    wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/$NEBULOUS_BRANCH/k8s/install-kube-u22-wg.sh && chmod +x ./install-kube-u22-wg.sh && ./install-kube-u22-wg.sh
 fi
 
 echo "Installing Helm..."

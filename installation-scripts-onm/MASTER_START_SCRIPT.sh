@@ -4,6 +4,10 @@ echo "Master start script"
 # dau - do as ubuntu
 dau="sudo -H -E -u ubuntu"
 
+if [[ -z "$NEBULOUS_BRANCH" ]]; then
+    NEBULOUS_BRANCH="r1"
+fi
+echo "NEBULOUS_BRANCH is set to: $NEBULOUS_BRANCH"
 
 if [[ "$CONTAINERIZATION_FLAVOR" == "k3s" ]]; then
   export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
@@ -102,13 +106,13 @@ if [ "$SERVERLESS_ENABLED" == "yes" ]; then
   kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1.12.4/serving-core.yaml
 
   # Download and apply Kourier
-  wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/main/serverless/kourier.yaml
+  wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/$NEBULOUS_BRANCH/serverless/kourier.yaml
   kubectl apply -f kourier.yaml
 
-  wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/main/serverless/serverless-platform-definition.yaml
+  wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/$NEBULOUS_BRANCH/serverless/serverless-platform-definition.yaml
   kubectl apply -f serverless-platform-definition.yaml
 
-  wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/main/serverless/config-features.yaml
+  wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/$NEBULOUS_BRANCH/serverless/config-features.yaml
   kubectl apply -f config-features.yaml
 
   # Patch config-domain with PUBLIC_IP
@@ -135,7 +139,7 @@ if [ "$SERVERLESS_ENABLED" == "yes" ]; then
     echo "LOCAL_SERVERLESS_SERVICES is set to: $LOCAL_SERVERLESS_SERVICES"
 
     sudo wget -q -O /usr/local/bin/label-serverless-services.sh \
-      https://raw.githubusercontent.com/eu-nebulous/sal-scripts/main/serverless/label-serverless-services.sh
+      https://raw.githubusercontent.com/eu-nebulous/sal-scripts/$NEBULOUS_BRANCH/serverless/label-serverless-services.sh
 
     sudo chmod +x /usr/local/bin/label-serverless-services.sh
 
