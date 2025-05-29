@@ -49,17 +49,17 @@ install_kubevela() {
     while true; do
         WORKER_NODES=$($dau kubectl get nodes --selector='!node-role.kubernetes.io/control-plane' -o json | jq '.items | length')
         if [ "$WORKER_NODES" -gt 0 ]; then
-            echo "$(date '+%Y-%m-%d %H:%M:%S') - Found $WORKER_NODES worker node(s), proceeding with KubeVela installation..." > /home/ubuntu/vela.txt
-            $dau bash -c 'nohup vela install --version 1.9.11 > /home/ubuntu/vela.txt 2>&1 &'
+            echo "$(date '+%Y-%m-%d %H:%M:%S') - Found $WORKER_NODES worker node(s), proceeding with KubeVela installation..." >> /home/ubuntu/vela.txt
+            $dau bash -c 'nohup vela install --version 1.9.11 >> /home/ubuntu/vela.txt 2>&1 &'
             break
         fi
-        echo "$(date '+%Y-%m-%d %H:%M:%S') - Waiting for worker nodes to be ready..." > /home/ubuntu/vela.txt
+        echo "$(date '+%Y-%m-%d %H:%M:%S') - Waiting for worker nodes to be ready..." >> /home/ubuntu/vela.txt
         sleep 10
     done
 }
 
 # Start KubeVela installation in background
-install_kubevela &
+$dau nohup bash -c "$(declare -f install_kubevela); install_kubevela"  > /dev/null 2>&1 &
 
 $dau bash -c 'helm repo add nebulous https://eu-nebulous.github.io/helm-charts/'
 
