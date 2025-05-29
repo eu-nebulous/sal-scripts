@@ -49,11 +49,11 @@ install_kubevela() {
     while true; do
         WORKER_NODES=$($dau kubectl get nodes --selector='!node-role.kubernetes.io/control-plane' -o json | jq '.items | length')
         if [ "$WORKER_NODES" -gt 0 ]; then
-            echo "Found $WORKER_NODES worker node(s), proceeding with KubeVela installation..."
+            echo "$(date '+%Y-%m-%d %H:%M:%S') - Found $WORKER_NODES worker node(s), proceeding with KubeVela installation..." > /home/ubuntu/vela.txt
             $dau bash -c 'nohup vela install --version 1.9.11 > /home/ubuntu/vela.txt 2>&1 &'
             break
         fi
-        echo "Waiting for worker nodes to be ready..."
+        echo "$(date '+%Y-%m-%d %H:%M:%S') - Waiting for worker nodes to be ready..." > /home/ubuntu/vela.txt
         sleep 10
     done
 }
