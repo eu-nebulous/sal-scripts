@@ -43,9 +43,7 @@ $dau bash -c 'curl -fsSl https://kubevela.io/script/install.sh | bash'
 echo "Configuration complete."
 
 echo "Setting KubeVela..."
-$dau bash -c 'helm repo add kubevela https://kubevela.github.io/charts && helm repo update'
-
-$dau bash -c 'helm install --version 1.9.11 --create-namespace -n vela-system kubevela kubevela/vela-core'
+$dau bash -c 'nohup vela install --version 1.9.11 > /home/ubuntu/vela.txt 2>&1 &'
 
 $dau bash -c 'helm repo add nebulous https://eu-nebulous.github.io/helm-charts/'
 
