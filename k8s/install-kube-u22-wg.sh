@@ -106,7 +106,15 @@ sudo apt-get install -y kubeadm=1.26.15-1.1 --allow-downgrades || { log_print ER
 sudo apt-get install -y kubelet=1.26.15-1.1 --allow-downgrades || { log_print ERROR "kubectl installation failed!"; exit $EXITCODE; }
 sudo apt-get install -y kubectl=1.26.15-1.1 --allow-downgrades || { log_print ERROR "kubelet installation failed!"; exit $EXITCODE; }
 
-WIREGUARD_VPN_IP=`ip a | grep wg | grep inet | awk '{print $2}' | cut -d'/' -f1`
+while true; do
+    WIREGUARD_VPN_IP=$(ip a | grep wg | grep inet | awk '{print $2}' | cut -d'/' -f1)
+    if [[ -n "$WIREGUARD_VPN_IP" ]]; then
+        echo INFO "WIREGUARD_VPN_IP is set to $WIREGUARD_VPN_IP"
+        break
+    fi
+    echo INFO "Waiting for WIREGUARD_VPN_IP to be set..."
+    sleep 2
+done
 sudo echo "KUBELET_EXTRA_ARGS=--node-ip=${WIREGUARD_VPN_IP}" | sudo tee -a /etc/default/kubelet
 sudo systemctl restart kubelet
 
