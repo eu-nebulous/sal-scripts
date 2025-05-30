@@ -44,22 +44,46 @@ echo "Configuration complete."
 
 echo "Setting KubeVela..."
 # Function to check for worker nodes and install KubeVela
-install_kubevela() {
-    # Wait for at least one worker node to be ready
-    while true; do
-        WORKER_NODES=$($dau kubectl get nodes --selector='!node-role.kubernetes.io/control-plane' -o json | jq '.items | length')
-        if [ "$WORKER_NODES" -gt 0 ]; then
-            echo "$(date '+%Y-%m-%d %H:%M:%S') - Found $WORKER_NODES worker node(s), proceeding with KubeVela installation..." >> /home/ubuntu/vela.txt
-            $dau bash -c 'nohup vela install --version 1.9.11 >> /home/ubuntu/vela.txt 2>&1 &'
-            break
-        fi
-        echo "$(date '+%Y-%m-%d %H:%M:%S') - Waiting for worker nodes to be ready..." >> /home/ubuntu/vela.txt
-        sleep 10
-    done
-}
+cat > /home/ubuntu/install_kubevela.sh << 'EOF'
+#!/bin/bash
 
-# Start KubeVela installation in background
-$dau nohup bash -c "$(declare -f install_kubevela); install_kubevela"  > /dev/null 2>&1 &
+# Wait for at least one worker node to be ready
+while true; do
+    WORKER_NODES=$(sudo -H -E -u ubuntu kubectl get nodes --selector='!node-role.kubernetes.io/control-plane' -o json | jq '.items | length')
+    if [ "$WORKER_NODES" -gt 0 ]; then
+        echo "$(date '+%Y-%m-%d %H:%M:%S') - Found $WORKER_NODES worker node(s), proceeding with KubeVela installation..." >> /home/ubuntu/vela.txt
+        sudo -H -E -u ubuntu bash -c 'nohup vela install --version 1.9.11 >> /home/ubuntu/vela.txt 2>&1'
+        # Disable the service after successful installation
+        sudo systemctl disable kubevela-installer.service
+        exit 0
+    fi
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - Waiting for worker nodes to be ready..." >> /home/ubuntu/vela.txt
+    sleep 10
+done
+EOF
+
+chmod +x /home/ubuntu/install_kubevela.sh
+
+# Create systemd service file
+cat << 'EOF' | sudo tee /etc/systemd/system/kubevela-installer.service
+[Unit]
+Description=KubeVela One-time Installer Service
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+ExecStart=/home/ubuntu/install_kubevela.sh
+Restart=no
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Enable and start the service
+sudo systemctl daemon-reload
+sudo systemctl enable kubevela-installer.service
+sudo systemctl start kubevela-installer.service
 
 $dau bash -c 'helm repo add nebulous https://eu-nebulous.github.io/helm-charts/'
 
