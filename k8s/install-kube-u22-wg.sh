@@ -66,7 +66,7 @@ sudo apt-get install -y curl || { log_print ERROR "curl installation failed!"; e
 
 # Install Docker
 log_print INFO "Installing Docker"
-sudo apt-get install -y docker.io
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y docker.io
 sudo systemctl enable docker
 sudo systemctl status docker
 sudo systemctl start docker
