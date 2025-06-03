@@ -2,6 +2,7 @@ apiVersion: core.oam.dev/v1beta1
 kind: ComponentDefinition
 metadata:
   name: serverless-platform
+  namespace: default
 spec:
   workload:
     definition:
@@ -10,24 +11,53 @@ spec:
   schematic:
     cue:
       template: |
+        import "encoding/json"
+        
+        
         parameter: {
-          resources: {
-            requests: {
-              cpu: *"100m" | string
-              memory: *"128Mi" | string
-            }
-          }
+
           replicas: *1 | int
+
+
+          resources?: {
+            [string]: _
+          }
+
+
+          env?: [...{
+            name: string
+            value?: string
+          }]
         }
+
+
         output: {
           apiVersion: "v1"
-          kind: "ConfigMap"
+          kind:       "ConfigMap"
           metadata: {
+
             name: context.name
+            labels: {
+              "app.oam.dev/component": context.name
+            }
           }
           data: {
-            "cpu-request": parameter.resources.requests.cpu
-            "memory-request": parameter.resources.requests.memory
-            "replicas": "\(parameter.replicas)"
+
+            replicas: "\(parameter.replicas)"
+
+
+            if parameter.resources != _|_ {
+              resources: json.Marshal(parameter.resources)
+            }
+
+
+
+            if parameter.env != _|_ {
+              env: json.Marshal({
+                for e in parameter.env {
+                  "\(e.name)": e.value
+                }
+              })
+            }
           }
         }

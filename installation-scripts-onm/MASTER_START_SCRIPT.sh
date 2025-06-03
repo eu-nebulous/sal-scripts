@@ -24,7 +24,7 @@ sudo -H -u ubuntu bash -c 'helm install cilium cilium/cilium --namespace kube-sy
 
 echo "Setting KubeVela..."
 sudo -H -u ubuntu bash -c 'helm repo add kubevela https://kubevela.github.io/charts && helm repo update'
-sudo -H -u ubuntu bash -c 'nohup vela install --version 1.9.11 > /home/ubuntu/vela.txt 2>&1 &'
+sudo -H -u ubuntu bash -c 'nohup vela install -y --version 1.9.11 > /home/ubuntu/vela.txt 2>&1 &'
 
 sudo -H -u ubuntu bash -c 'helm repo add nebulous https://eu-nebulous.github.io/helm-charts/'
 
@@ -108,4 +108,46 @@ if [ "$SERVERLESS_ENABLED" == "yes" ]; then
 
   kubectl apply -f https://raw.githubusercontent.com/kubevela/samples/master/06.Knative_App/componentdefinition-knative-serving.yaml
   echo "Serverless installation completed."
+fi
+
+if [ "$WORKFLOW_ENABLED" == "yes" ]; then
+  echo "Workflow installation.";
+
+  sudo -H -E -u ubuntu bash -c 'helm install argo-workflows argo-workflows \
+    --repo https://argoproj.github.io/argo-helm \
+    --namespace argo \
+    --create-namespace \
+    --set crds.install=true \
+    --set crds.keep=false \
+    --set workflow.serviceAccount.create=true \
+    --set workflow.serviceAccount.name="argo" \
+    --set workflow.rbac.create=true \
+    --set "controller.workflowNamespaces={argo}" \
+    --set controller.metricsConfig.enabled=true \
+    --set controller.telemetryConfig.enabled=true \
+    --set controller.serviceMonitor.enabled=true \
+    --set "server.authModes={server}" \
+    --set "controller.tolerations[0].effect=NoSchedule" \
+    --set "controller.tolerations[0].key=node.kubernetes.io/unschedulable" \
+    --set "controller.tolerations[0].operator=Exists" \
+    --set "controller.tolerations[1].effect=NoSchedule" \
+    --set "controller.tolerations[1].operator=Exists" \
+    --set "controller.priorityClassName=system-node-critical" \
+    --set controller.nodeSelector.node-role\\.kubernetes\\.io/control-plane="" \
+    --set "server.tolerations[0].effect=NoSchedule" \
+    --set "server.tolerations[0].key=node.kubernetes.io/unschedulable" \
+    --set "server.tolerations[0].operator=Exists" \
+    --set "server.tolerations[1].effect=NoSchedule" \
+    --set "server.tolerations[1].operator=Exists" \
+    --set "server.priorityClassName=system-node-critical" \
+    --set server.nodeSelector.node-role\\.kubernetes\\.io/control-plane=""'
+  
+  sudo -H -E -u ubuntu bash -c 'kubectl -n argo create rolebinding argo-workflows-server --role=argo-workflows-workflow --serviceaccount=argo:argo-workflows-server'
+  sudo -H -E -u ubuntu bash -c 'kubectl -n argo create rolebinding argo-workflows-workflow-controller --role=argo-workflows-workflow --serviceaccount=argo:argo-workflows-workflow-controller'
+  sudo -H -E -u ubuntu bash -c 'kubectl -n argo create rolebinding default --role=argo-workflows-workflow --serviceaccount=argo:default'
+
+  sudo -H -u ubuntu bash -c "kubectl -n argo create secret docker-registry regcred --docker-server=$PRIVATE_DOCKER_REGISTRY_SERVER --docker-username=$PRIVATE_DOCKER_REGISTRY_USERNAME --docker-password=$PRIVATE_DOCKER_REGISTRY_PASSWORD --docker-email=$PRIVATE_DOCKER_REGISTRY_EMAIL"
+  sudo -H -u ubuntu bash -c 'kubectl -n argo patch serviceaccount default -p "{\"imagePullSecrets\": [{\"name\": \"regcred\"}]}"'
+
+  echo "Workflow installation completed.";
 fi
