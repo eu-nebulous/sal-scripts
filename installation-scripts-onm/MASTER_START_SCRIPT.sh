@@ -23,6 +23,10 @@ while true; do
     echo INFO "Waiting for WIREGUARD_VPN_IP to be set..."
     sleep 2
 done
+echo "modprobe br_netfilter"
+sudo modprobe br_netfilter
+echo "modprobe br_netfilter done"
+
 sudo kubeadm init --apiserver-advertise-address ${WIREGUARD_VPN_IP} --service-cidr 10.96.0.0/16 --pod-network-cidr 10.244.0.0/16
 
 
