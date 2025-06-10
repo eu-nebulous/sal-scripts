@@ -1,9 +1,28 @@
 #!/bin/bash
 echo "Master pre-install script\n"
 
+# dau - do as ubuntu
+dau="sudo -H -E -u ubuntu"
+
+if [[ -z "$NEBULOUS_SCRIPTS_BRANCH" ]]; then
+    NEBULOUS_SCRIPTS_BRANCH="r1"
+fi
+echo "NEBULOUS_SCRIPTS_BRANCH is set to: $NEBULOUS_SCRIPTS_BRANCH"
+
+echo "Setting hostname\n"
 sudo hostnamectl set-hostname "$variables_PA_JOB_NAME"
-sudo -H -u ubuntu bash -c 'wget https://raw.githubusercontent.com/eu-nebulous/overlay-network-manager/r1/network-manager/bootstrap-agent-scripts/onm/onm-bootstrap.sh && chmod +x onm-bootstrap.sh'
-sudo -H -u ubuntu bash -c "./onm-bootstrap.sh 'CREATE' $APPLICATION_ID $ONM_URL $PUBLIC_IP $SSH_PORT";
+
+if [[ "$CONTAINERIZATION_FLAVOR" == "k3s" ]]; then
+    K3S_DEP_PATH=/home/ubuntu/k3s
+    echo "Create K3s Dependencies folder $K3S_DEP_PATH\n"
+    $dau bash -c "mkdir -p $K3S_DEP_PATH"
+fi
+
+
+
+echo "Setting Wireguard Interface\n"
+$dau bash -c "wget https://raw.githubusercontent.com/eu-nebulous/overlay-network-manager/$NEBULOUS_SCRIPTS_BRANCH/network-manager/bootstrap-agent-scripts/onm/onm-bootstrap.sh -O onm-bootstrap.sh  && chmod +x onm-bootstrap.sh"
+$dau bash -c "./onm-bootstrap.sh 'CREATE' $APPLICATION_ID $ONM_URL $PUBLIC_IP $SSH_PORT";
 echo ""
 echo ""
 
@@ -17,3 +36,11 @@ while true; do
     echo INFO "Waiting for WIREGUARD_VPN_IP to be set..."
     sleep 2
 done
+
+if [[ "$CONTAINERIZATION_FLAVOR" == "k3s" ]]; then
+    echo "Executing k3s-preinstall script\n"
+    $dau bash -c "wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/$NEBULOUS_SCRIPTS_BRANCH/k3s/preinstall-kube-k3s-u22.sh -O ${K3S_DEP_PATH}/preinstall-kube-k3s-u22.sh  && chmod +x $K3S_DEP_PATH/preinstall-kube-k3s-u22.sh && $K3S_DEP_PATH/preinstall-kube-k3s-u22.sh"
+    $dau bash -c "$K3S_DEP_PATH/preinstall-kube-k3s-u22.sh"
+fi
+
+
