@@ -120,7 +120,8 @@ $dau bash -c 'helm install solver nebulous/nebulous-optimiser-solver \
   --set amplLicense.keyValue="$LICENSE_AMPL" \
   --set application.id=$APPLICATION_ID \
   --set activemq.ACTIVEMQ_HOST=$BROKER_ADDRESS \
-  --set activemq.ACTIVEMQ_PORT=$BROKER_PORT'
+  --set activemq.ACTIVEMQ_PORT=$BROKER_PORT \
+  --set image.tag="main-3aee09dd6d701bc54d9a5ed173dfbcc4e2808e9f-20250506181924"'
 
 echo "Add volumes provisioner"
 $dau bash -c "kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.27/deploy/local-path-storage.yaml"  
