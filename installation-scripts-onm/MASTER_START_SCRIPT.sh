@@ -4,6 +4,10 @@ echo "Master start script"
 # dau - do as ubuntu
 dau="sudo -H -E -u ubuntu"
 
+if [[ -z "$NEBULOUS_SCRIPTS_BRANCH" ]]; then
+    NEBULOUS_SCRIPTS_BRANCH="r1"
+fi
+echo "NEBULOUS_SCRIPTS_BRANCH is set to: $NEBULOUS_SCRIPTS_BRANCH"
 
 if [[ "$CONTAINERIZATION_FLAVOR" == "k3s" ]]; then
   export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
@@ -19,6 +23,10 @@ while true; do
     echo INFO "Waiting for WIREGUARD_VPN_IP to be set..."
     sleep 2
 done
+echo "modprobe br_netfilter"
+sudo modprobe br_netfilter
+echo "modprobe br_netfilter done"
+
 sudo kubeadm init --apiserver-advertise-address ${WIREGUARD_VPN_IP} --service-cidr 10.96.0.0/16 --pod-network-cidr 10.244.0.0/16
 
 
@@ -40,12 +48,48 @@ echo "Configuration complete."
 
 
 echo "Setting KubeVela..."
-$dau bash -c 'helm repo add kubevela https://kubevela.github.io/charts && helm repo update'
+# Function to check for worker nodes and install KubeVela
+cat > /home/ubuntu/install_kubevela.sh << 'EOF'
+#!/bin/bash
 
-$dau bash -c 'nohup vela install -y --version 1.9.11 > /home/ubuntu/vela.txt 2>&1 &'
+# Wait for at least one worker node to be ready
+while true; do
+    WORKER_NODES=$(sudo -H -E -u ubuntu kubectl get nodes --selector='!node-role.kubernetes.io/control-plane' -o json | jq '.items | length')
+    if [ "$WORKER_NODES" -gt 0 ]; then
+        echo "$(date '+%Y-%m-%d %H:%M:%S') - Found $WORKER_NODES worker node(s), proceeding with KubeVela installation..." >> /home/ubuntu/vela.txt
+        sudo -H -E -u ubuntu bash -c 'nohup vela install --version 1.9.11 >> /home/ubuntu/vela.txt 2>&1'
+        # Disable the service after successful installation
+        sudo systemctl disable kubevela-installer.service
+        exit 0
+    fi
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - Waiting for worker nodes to be ready..." >> /home/ubuntu/vela.txt
+    sleep 10
+done
+EOF
 
+chmod +x /home/ubuntu/install_kubevela.sh
 
-echo "Adding nebulous helm repositories"
+# Create systemd service file
+cat << 'EOF' | sudo tee /etc/systemd/system/kubevela-installer.service
+[Unit]
+Description=KubeVela One-time Installer Service
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+ExecStart=/home/ubuntu/install_kubevela.sh
+Restart=no
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Enable and start the service
+sudo systemctl daemon-reload
+sudo systemctl enable kubevela-installer.service
+sudo systemctl start kubevela-installer.service
+
 $dau bash -c 'helm repo add nebulous https://eu-nebulous.github.io/helm-charts/'
 $dau bash -c 'helm repo add netdata https://netdata.github.io/helmchart/'
 $dau bash -c 'helm repo update'
@@ -75,6 +119,16 @@ if [ "$COMPONENTS_IN_CLUSTER" == "yes" ]; then
   # If PUBLIC_IP is given, use it as app_broker_address. Otherwise, determine it.
   app_broker_address=${PUBLIC_IP}
 
+echo "Starting Solver"
+$dau bash -c 'helm install solver nebulous/nebulous-optimiser-solver \
+  --set tolerations[0].key="node-role.kubernetes.io/control-plane" \
+  --set tolerations[0].operator="Exists" \
+  --set tolerations[0].effect="NoSchedule" \
+  --set amplLicense.keyValue="$LICENSE_AMPL" \
+  --set application.id=$APPLICATION_ID \
+  --set activemq.ACTIVEMQ_HOST=$BROKER_ADDRESS \
+  --set activemq.ACTIVEMQ_PORT=$BROKER_PORT \
+  --set image.tag="main-3aee09dd6d701bc54d9a5ed173dfbcc4e2808e9f-20250506181924"'
   # If public_ip is not set, fall back to polling multiple services
   if [[ -z "$app_broker_address" ]]; then
     echo "No IP provided. Polling external services to determine public IP..."
@@ -332,13 +386,13 @@ if [ "$SERVERLESS_ENABLED" == "yes" ]; then
   kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1.12.4/serving-core.yaml
 
   # Download and apply Kourier
-  wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/main/serverless/kourier.yaml
+  wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/$NEBULOUS_SCRIPTS_BRANCH/serverless/kourier.yaml
   kubectl apply -f kourier.yaml
 
-  wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/main/serverless/serverless-platform-definition.yaml
+  wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/$NEBULOUS_SCRIPTS_BRANCH/serverless/serverless-platform-definition.yaml
   kubectl apply -f serverless-platform-definition.yaml
 
-  wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/main/serverless/config-features.yaml
+  wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/$NEBULOUS_SCRIPTS_BRANCH/serverless/config-features.yaml
   kubectl apply -f config-features.yaml
 
   # Patch config-domain with PUBLIC_IP
@@ -360,7 +414,21 @@ if [ "$SERVERLESS_ENABLED" == "yes" ]; then
   kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1.12.4/serving-default-domain.yaml
 
   kubectl apply -f https://raw.githubusercontent.com/kubevela/samples/master/06.Knative_App/componentdefinition-knative-serving.yaml
-  echo "Serverless installation completed."
+
+  if [ -n "$LOCAL_SERVERLESS_SERVICES" ]; then
+    echo "LOCAL_SERVERLESS_SERVICES is set to: $LOCAL_SERVERLESS_SERVICES"
+
+    sudo wget -q -O /usr/local/bin/label-serverless-services.sh \
+      https://raw.githubusercontent.com/eu-nebulous/sal-scripts/$NEBULOUS_SCRIPTS_BRANCH/serverless/label-serverless-services.sh
+
+    sudo chmod +x /usr/local/bin/label-serverless-services.sh
+
+    sudo touch /var/log/label-serverless-services.log
+    sudo chown ubuntu:ubuntu /var/log/label-serverless-services.log
+
+    nohup /usr/local/bin/label-serverless-services.sh \
+      >> /var/log/label-serverless-services.log 2>&1 &
+  fi
 fi
 
 if [ "$WORKFLOW_ENABLED" == "yes" ]; then
