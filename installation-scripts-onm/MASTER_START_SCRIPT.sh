@@ -476,10 +476,11 @@ fi
 echo "Installing OPA Gatekeeper..."
 wget https://raw.githubusercontent.com/eu-nebulous/security-manager/dev/OPA-GATEKEEPER-INSTALL.sh
 chmod +x OPA-GATEKEEPER-INSTALL.sh
-sudo ./OPA-GATEKEEPER-INSTALL.sh
+./OPA-GATEKEEPER-INSTALL.sh
 
 echo "Installing Security Manager..."
 $dau bash -c 'helm install security-manager nebulous/nebulous-security-manager \
+  --set-file configMap.k3sConfig=/home/ubuntu/.kube/config
   --set tolerations[0].key="node-role.kubernetes.io/control-plane" \
   --set tolerations[0].operator="Exists" \
   --set tolerations[0].effect="NoSchedule"'
