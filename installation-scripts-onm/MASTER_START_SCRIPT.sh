@@ -483,7 +483,7 @@ chmod +x OPA-GATEKEEPER-INSTALL.sh
 
 echo "Installing Security Manager..."
 $dau bash -c 'helm install security-manager nebulous/nebulous-security-manager \
-  --set-file configMap.k3sConfig=\"$KUBECONFIG\" \
+  --set-file configMap.k3sConfig="$KUBECONFIG" \
   --set tolerations[0].key="node-role.kubernetes.io/control-plane" \
   --set tolerations[0].operator="Exists" \
   --set tolerations[0].effect="NoSchedule"'
