@@ -140,7 +140,7 @@ EOF
 chmod +x /home/ubuntu/kubevela_installer_service.sh
 
 # Create systemd service file
-cat << 'EOF' | sudo tee /etc/systemd/system/kubevela-installer.service
+cat << EOF | sudo tee /etc/systemd/system/kubevela-installer.service
 [Unit]
 Description=KubeVela One-time Installer Service
 After=network.target
@@ -150,6 +150,8 @@ Type=simple
 User=ubuntu
 ExecStart=/home/ubuntu/kubevela_installer_service.sh
 Restart=no
+Environment="LOCAL_SERVERLESS_SERVICES=${LOCAL_SERVERLESS_SERVICES}"
+Environment="SERVERLESS_ENABLED=${SERVERLESS_ENABLED}"
 
 [Install]
 WantedBy=multi-user.target
