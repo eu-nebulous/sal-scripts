@@ -50,7 +50,9 @@ echo "Setting KubeVela..."
 # Function to check for worker nodes and install KubeVela
 cat > /home/ubuntu/install_kubevela.sh << 'EOF'
 #!/bin/bash
-sudo -H -E -u ubuntu bash -c 'nohup vela install --version 1.9.11'
+echo "Start install_kubevela.sh"
+sudo -H -E -u ubuntu bash -c 'vela install -y --version 1.9.11'
+echo "Vela installation done."
 if [ "$SERVERLESS_ENABLED" == "yes" ]; then
   echo "Serverless installation."
 
@@ -113,7 +115,7 @@ if [ "$SERVERLESS_ENABLED" == "yes" ]; then
       >> /var/log/label-serverless-services.log 2>&1 &
   fi
 fi
-
+echo "End install_kubevela.sh"
 EOF
 
 chmod +x /home/ubuntu/install_kubevela.sh
@@ -126,7 +128,7 @@ while true; do
     WORKER_NODES=$(sudo -H -E -u ubuntu kubectl get nodes --selector='!node-role.kubernetes.io/control-plane' -o json | jq '.items | length')
     if [ "$WORKER_NODES" -gt 0 ]; then
         echo "$(date '+%Y-%m-%d %H:%M:%S') - Found $WORKER_NODES worker node(s), proceeding with KubeVela installation..." >> /home/ubuntu/vela.txt
-        ./home/ubuntu/install_kubevela.sh >> /home/ubuntu/vela.txt 2>&1
+        /home/ubuntu/install_kubevela.sh >> /home/ubuntu/vela.txt 2>&1
         # Disable the service after successful installation
         sudo systemctl disable kubevela-installer.service
         exit 0
