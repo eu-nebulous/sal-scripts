@@ -77,6 +77,9 @@ if [ "$SERVERLESS_ENABLED" == "yes" ]; then
   wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/$NEBULOUS_SCRIPTS_BRANCH/serverless/serverless-platform-definition.yaml
   kubectl apply -f serverless-platform-definition.yaml
 
+  wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/$NEBULOUS_SCRIPTS_BRANCH/serverless/knative-serving-definition.yaml
+  kubectl apply -f knative-serving-definition.yaml
+
   wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/$NEBULOUS_SCRIPTS_BRANCH/serverless/config-features.yaml
   kubectl apply -f config-features.yaml
 
@@ -97,8 +100,6 @@ if [ "$SERVERLESS_ENABLED" == "yes" ]; then
 
   # Apply default domain configuration
   kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1.12.4/serving-default-domain.yaml
-
-  kubectl apply -f https://raw.githubusercontent.com/kubevela/samples/master/06.Knative_App/componentdefinition-knative-serving.yaml
 
   if [ -n "$LOCAL_SERVERLESS_SERVICES" ]; then
     echo "LOCAL_SERVERLESS_SERVICES is set to: $LOCAL_SERVERLESS_SERVICES"
