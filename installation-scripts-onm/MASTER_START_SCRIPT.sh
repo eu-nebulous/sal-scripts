@@ -12,6 +12,9 @@ echo "NEBULOUS_SCRIPTS_BRANCH is set to: $NEBULOUS_SCRIPTS_BRANCH"
 if [[ "$CONTAINERIZATION_FLAVOR" == "k3s" ]]; then
   export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
   echo "KUBECONFIG=${KUBECONFIG}" | sudo tee -a /etc/environment
+else
+  export KUBECONFIG=/home/ubuntu/.kube/config
+  echo "KUBECONFIG=${KUBECONFIG}" | sudo tee -a /etc/environment
 fi
 
 while true; do
@@ -210,4 +213,16 @@ if [ "$WORKFLOW_ENABLED" == "yes" ]; then
 
   echo "Workflow installation completed.";
 fi
+
+echo "Installing OPA Gatekeeper..."
+wget https://raw.githubusercontent.com/eu-nebulous/security-manager/dev/OPA-GATEKEEPER-INSTALL.sh
+chmod +x OPA-GATEKEEPER-INSTALL.sh
+./OPA-GATEKEEPER-INSTALL.sh
+
+echo "Installing Security Manager..."
+$dau bash -c 'helm install security-manager nebulous/nebulous-security-manager \
+  --set-file configMap.k3sConfig="$KUBECONFIG" \
+  --set tolerations[0].key="node-role.kubernetes.io/control-plane" \
+  --set tolerations[0].operator="Exists" \
+  --set tolerations[0].effect="NoSchedule"'
 
