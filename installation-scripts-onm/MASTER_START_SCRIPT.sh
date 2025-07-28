@@ -12,6 +12,9 @@ echo "NEBULOUS_SCRIPTS_BRANCH is set to: $NEBULOUS_SCRIPTS_BRANCH"
 if [[ "$CONTAINERIZATION_FLAVOR" == "k3s" ]]; then
   export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
   echo "KUBECONFIG=${KUBECONFIG}" | sudo tee -a /etc/environment
+else
+  export KUBECONFIG=/home/ubuntu/.kube/config
+  echo "KUBECONFIG=${KUBECONFIG}" | sudo tee -a /etc/environment
 fi
 
 while true; do
@@ -50,82 +53,9 @@ echo "Setting KubeVela..."
 # Function to check for worker nodes and install KubeVela
 cat > /home/ubuntu/install_kubevela.sh << 'EOF'
 #!/bin/bash
-
-# Wait for at least one worker node to be ready
-while true; do
-    WORKER_NODES=$(sudo -H -E -u ubuntu kubectl get nodes --selector='!node-role.kubernetes.io/control-plane' -o json | jq '.items | length')
-    if [ "$WORKER_NODES" -gt 0 ]; then
-        echo "$(date '+%Y-%m-%d %H:%M:%S') - Found $WORKER_NODES worker node(s), proceeding with KubeVela installation..." >> /home/ubuntu/vela.txt
-        sudo -H -E -u ubuntu bash -c 'nohup vela install --version 1.9.11 >> /home/ubuntu/vela.txt 2>&1'
-        # Disable the service after successful installation
-        sudo systemctl disable kubevela-installer.service
-        exit 0
-    fi
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - Waiting for worker nodes to be ready..." >> /home/ubuntu/vela.txt
-    sleep 10
-done
-EOF
-
-chmod +x /home/ubuntu/install_kubevela.sh
-
-# Create systemd service file
-cat << 'EOF' | sudo tee /etc/systemd/system/kubevela-installer.service
-[Unit]
-Description=KubeVela One-time Installer Service
-After=network.target
-
-[Service]
-Type=simple
-User=ubuntu
-ExecStart=/home/ubuntu/install_kubevela.sh
-Restart=no
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-# Enable and start the service
-sudo systemctl daemon-reload
-sudo systemctl enable kubevela-installer.service
-sudo systemctl start kubevela-installer.service
-
-$dau bash -c 'helm repo add nebulous https://eu-nebulous.github.io/helm-charts/'
-
-$dau bash -c 'helm repo add netdata https://netdata.github.io/helmchart/'
-
-$dau bash -c 'helm repo update'
-
-echo "Login to docker registry"
-$dau bash -c "kubectl delete secret docker-registry regcred --ignore-not-found"
-$dau bash -c "kubectl create secret docker-registry regcred --docker-server=$PRIVATE_DOCKER_REGISTRY_SERVER --docker-username=$PRIVATE_DOCKER_REGISTRY_USERNAME --docker-password=$PRIVATE_DOCKER_REGISTRY_PASSWORD --docker-email=$PRIVATE_DOCKER_REGISTRY_EMAIL"
-
-echo "Starting EMS"
-$dau bash -c 'helm install ems nebulous/ems-server \
-  --set tolerations[0].key="node-role.kubernetes.io/control-plane" \
-  --set tolerations[0].operator="Exists" \
-  --set tolerations[0].effect="NoSchedule" \
-  --set app_uuid=$APPLICATION_ID \
-  --set broker_address=$BROKER_ADDRESS \
-  --set image.tag="latest" \
-  --set broker_port=$BROKER_PORT'
-
-
-$dau bash -c 'helm install netdata netdata/netdata'
-
-echo "Starting Solver"
-$dau bash -c 'helm install solver nebulous/nebulous-optimiser-solver \
-  --set tolerations[0].key="node-role.kubernetes.io/control-plane" \
-  --set tolerations[0].operator="Exists" \
-  --set tolerations[0].effect="NoSchedule" \
-  --set amplLicense.keyValue="$LICENSE_AMPL" \
-  --set application.id=$APPLICATION_ID \
-  --set activemq.ACTIVEMQ_HOST=$BROKER_ADDRESS \
-  --set activemq.ACTIVEMQ_PORT=$BROKER_PORT \
-  --set image.tag="main-3aee09dd6d701bc54d9a5ed173dfbcc4e2808e9f-20250506181924"'
-
-echo "Add volumes provisioner"
-$dau bash -c "kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.27/deploy/local-path-storage.yaml"  
-
+echo "Start install_kubevela.sh"
+sudo -H -E -u ubuntu bash -c 'vela install -y --version 1.9.11'
+echo "Vela installation done."
 if [ "$SERVERLESS_ENABLED" == "yes" ]; then
   echo "Serverless installation."
 
@@ -188,6 +118,90 @@ if [ "$SERVERLESS_ENABLED" == "yes" ]; then
       >> /var/log/label-serverless-services.log 2>&1 &
   fi
 fi
+echo "End install_kubevela.sh"
+EOF
+
+chmod +x /home/ubuntu/install_kubevela.sh
+
+cat > /home/ubuntu/kubevela_installer_service.sh << 'EOF'
+#!/bin/bash
+
+# Wait for at least one worker node to be ready
+while true; do
+    WORKER_NODES=$(sudo -H -E -u ubuntu kubectl get nodes --selector='!node-role.kubernetes.io/control-plane' -o json | jq '.items | length')
+    if [ "$WORKER_NODES" -gt 0 ]; then
+        echo "$(date '+%Y-%m-%d %H:%M:%S') - Found $WORKER_NODES worker node(s), proceeding with KubeVela installation..." >> /home/ubuntu/vela.txt
+        /home/ubuntu/install_kubevela.sh >> /home/ubuntu/vela.txt 2>&1
+        # Disable the service after successful installation
+        sudo systemctl disable kubevela-installer.service
+        exit 0
+    fi
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - Waiting for worker nodes to be ready..." >> /home/ubuntu/vela.txt
+    sleep 10
+done
+EOF
+chmod +x /home/ubuntu/kubevela_installer_service.sh
+
+# Create systemd service file
+cat << EOF | sudo tee /etc/systemd/system/kubevela-installer.service
+[Unit]
+Description=KubeVela One-time Installer Service
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+ExecStart=/home/ubuntu/kubevela_installer_service.sh
+Restart=no
+Environment="LOCAL_SERVERLESS_SERVICES=${LOCAL_SERVERLESS_SERVICES}"
+Environment="SERVERLESS_ENABLED=${SERVERLESS_ENABLED}"
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Enable and start the service
+sudo systemctl daemon-reload
+sudo systemctl enable kubevela-installer.service
+sudo systemctl start kubevela-installer.service
+
+$dau bash -c 'helm repo add nebulous https://eu-nebulous.github.io/helm-charts/'
+
+$dau bash -c 'helm repo add netdata https://netdata.github.io/helmchart/'
+
+$dau bash -c 'helm repo update'
+
+echo "Login to docker registry"
+$dau bash -c "kubectl delete secret docker-registry regcred --ignore-not-found"
+$dau bash -c "kubectl create secret docker-registry regcred --docker-server=$PRIVATE_DOCKER_REGISTRY_SERVER --docker-username=$PRIVATE_DOCKER_REGISTRY_USERNAME --docker-password=$PRIVATE_DOCKER_REGISTRY_PASSWORD --docker-email=$PRIVATE_DOCKER_REGISTRY_EMAIL"
+
+echo "Starting EMS"
+$dau bash -c 'helm install ems nebulous/ems-server \
+  --set tolerations[0].key="node-role.kubernetes.io/control-plane" \
+  --set tolerations[0].operator="Exists" \
+  --set tolerations[0].effect="NoSchedule" \
+  --set app_uuid=$APPLICATION_ID \
+  --set broker_address=$BROKER_ADDRESS \
+  --set image.tag="latest" \
+  --set broker_port=$BROKER_PORT'
+
+
+$dau bash -c 'helm install netdata netdata/netdata'
+
+echo "Starting Solver"
+$dau bash -c 'helm install solver nebulous/nebulous-optimiser-solver \
+  --set tolerations[0].key="node-role.kubernetes.io/control-plane" \
+  --set tolerations[0].operator="Exists" \
+  --set tolerations[0].effect="NoSchedule" \
+  --set amplLicense.keyValue="$LICENSE_AMPL" \
+  --set application.id=$APPLICATION_ID \
+  --set activemq.ACTIVEMQ_HOST=$BROKER_ADDRESS \
+  --set activemq.ACTIVEMQ_PORT=$BROKER_PORT \
+  --set image.tag="main-3aee09dd6d701bc54d9a5ed173dfbcc4e2808e9f-20250506181924"'
+
+echo "Add volumes provisioner"
+$dau bash -c "kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.27/deploy/local-path-storage.yaml"  
+
 
 if [ "$WORKFLOW_ENABLED" == "yes" ]; then
   echo "Workflow installation.";
@@ -199,4 +213,16 @@ if [ "$WORKFLOW_ENABLED" == "yes" ]; then
 
   echo "Workflow installation completed.";
 fi
+
+echo "Installing OPA Gatekeeper..."
+wget https://raw.githubusercontent.com/eu-nebulous/security-manager/dev/OPA-GATEKEEPER-INSTALL.sh
+chmod +x OPA-GATEKEEPER-INSTALL.sh
+./OPA-GATEKEEPER-INSTALL.sh
+
+echo "Installing Security Manager..."
+$dau bash -c 'helm install security-manager nebulous/nebulous-security-manager \
+  --set-file configMap.k3sConfig="$KUBECONFIG" \
+  --set tolerations[0].key="node-role.kubernetes.io/control-plane" \
+  --set tolerations[0].operator="Exists" \
+  --set tolerations[0].effect="NoSchedule"'
 
