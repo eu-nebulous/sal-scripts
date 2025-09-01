@@ -61,7 +61,7 @@ if [ "$SERVERLESS_ENABLED" == "yes" ]; then
 
   # Install Cosign
   export COSIGN_VERSION=$(curl -s https://api.github.com/repos/sigstore/cosign/releases/latest | jq -r '.tag_name')
-  curl -LO "https://github.com/sigstore/cosign/releases/download/${COSIGN_VERSION}/cosign-linux-amd64"
+  sudo curl -LO "https://github.com/sigstore/cosign/releases/download/${COSIGN_VERSION}/cosign-linux-amd64"
   sudo mv cosign-linux-amd64 /usr/local/bin/cosign
   sudo chmod +x /usr/local/bin/cosign
 
@@ -74,13 +74,13 @@ if [ "$SERVERLESS_ENABLED" == "yes" ]; then
   kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1.12.4/serving-core.yaml
 
   # Download and apply Kourier
-  wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/$NEBULOUS_SCRIPTS_BRANCH/serverless/kourier.yaml
+  sudo wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/$NEBULOUS_SCRIPTS_BRANCH/serverless/kourier.yaml
   kubectl apply -f kourier.yaml
 
-  wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/$NEBULOUS_SCRIPTS_BRANCH/serverless/serverless-platform-definition.yaml
+  sudo wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/$NEBULOUS_SCRIPTS_BRANCH/serverless/serverless-platform-definition.yaml
   kubectl apply -f serverless-platform-definition.yaml
 
-  wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/$NEBULOUS_SCRIPTS_BRANCH/serverless/config-features.yaml
+  sudo wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/$NEBULOUS_SCRIPTS_BRANCH/serverless/config-features.yaml
   kubectl apply -f config-features.yaml
 
   # Patch config-domain with PUBLIC_IP
@@ -155,6 +155,8 @@ ExecStart=/home/ubuntu/kubevela_installer_service.sh
 Restart=no
 Environment="LOCAL_SERVERLESS_SERVICES=${LOCAL_SERVERLESS_SERVICES}"
 Environment="SERVERLESS_ENABLED=${SERVERLESS_ENABLED}"
+Environment="APPLICATION_ID=${APPLICATION_ID}"
+Environment="NEBULOUS_SCRIPTS_BRANCH=${NEBULOUS_SCRIPTS_BRANCH}"
 
 [Install]
 WantedBy=multi-user.target
