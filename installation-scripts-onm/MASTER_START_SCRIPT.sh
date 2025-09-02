@@ -12,6 +12,9 @@ echo "NEBULOUS_SCRIPTS_BRANCH is set to: $NEBULOUS_SCRIPTS_BRANCH"
 if [[ "$CONTAINERIZATION_FLAVOR" == "k3s" ]]; then
   export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
   echo "KUBECONFIG=${KUBECONFIG}" | sudo tee -a /etc/environment
+else
+  export KUBECONFIG=/home/ubuntu/.kube/config
+  echo "KUBECONFIG=${KUBECONFIG}" | sudo tee -a /etc/environment
 fi
 
 while true; do
@@ -58,7 +61,7 @@ if [ "$SERVERLESS_ENABLED" == "yes" ]; then
 
   # Install Cosign
   export COSIGN_VERSION=$(curl -s https://api.github.com/repos/sigstore/cosign/releases/latest | jq -r '.tag_name')
-  curl -LO "https://github.com/sigstore/cosign/releases/download/${COSIGN_VERSION}/cosign-linux-amd64"
+  sudo curl -LO "https://github.com/sigstore/cosign/releases/download/${COSIGN_VERSION}/cosign-linux-amd64"
   sudo mv cosign-linux-amd64 /usr/local/bin/cosign
   sudo chmod +x /usr/local/bin/cosign
 
@@ -71,16 +74,17 @@ if [ "$SERVERLESS_ENABLED" == "yes" ]; then
   kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1.12.4/serving-core.yaml
 
   # Download and apply Kourier
-  wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/$NEBULOUS_SCRIPTS_BRANCH/serverless/kourier.yaml
+  sudo wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/$NEBULOUS_SCRIPTS_BRANCH/serverless/kourier.yaml
   kubectl apply -f kourier.yaml
 
-  wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/$NEBULOUS_SCRIPTS_BRANCH/serverless/serverless-platform-definition.yaml
+  sudo wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/$NEBULOUS_SCRIPTS_BRANCH/serverless/serverless-platform-definition.yaml
   kubectl apply -f serverless-platform-definition.yaml
 
-  wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/$NEBULOUS_SCRIPTS_BRANCH/serverless/knative-serving-definition.yaml
+
+  sudo wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/$NEBULOUS_SCRIPTS_BRANCH/serverless/knative-serving-definition.yaml
   kubectl apply -f knative-serving-definition.yaml
 
-  wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/$NEBULOUS_SCRIPTS_BRANCH/serverless/config-features.yaml
+  sudo wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/$NEBULOUS_SCRIPTS_BRANCH/serverless/config-features.yaml
   kubectl apply -f config-features.yaml
 
   # Patch config-domain with PUBLIC_IP
@@ -153,6 +157,8 @@ ExecStart=/home/ubuntu/kubevela_installer_service.sh
 Restart=no
 Environment="LOCAL_SERVERLESS_SERVICES=${LOCAL_SERVERLESS_SERVICES}"
 Environment="SERVERLESS_ENABLED=${SERVERLESS_ENABLED}"
+Environment="APPLICATION_ID=${APPLICATION_ID}"
+Environment="NEBULOUS_SCRIPTS_BRANCH=${NEBULOUS_SCRIPTS_BRANCH}"
 
 [Install]
 WantedBy=multi-user.target
@@ -211,4 +217,16 @@ if [ "$WORKFLOW_ENABLED" == "yes" ]; then
 
   echo "Workflow installation completed.";
 fi
+
+echo "Installing OPA Gatekeeper..."
+wget https://raw.githubusercontent.com/eu-nebulous/security-manager/dev/OPA-GATEKEEPER-INSTALL.sh
+chmod +x OPA-GATEKEEPER-INSTALL.sh
+./OPA-GATEKEEPER-INSTALL.sh
+
+echo "Installing Security Manager..."
+$dau bash -c 'helm install security-manager nebulous/nebulous-security-manager \
+  --set-file configMap.k3sConfig="$KUBECONFIG" \
+  --set tolerations[0].key="node-role.kubernetes.io/control-plane" \
+  --set tolerations[0].operator="Exists" \
+  --set tolerations[0].effect="NoSchedule"'
 
