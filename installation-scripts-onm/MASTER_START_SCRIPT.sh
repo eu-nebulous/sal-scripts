@@ -54,6 +54,9 @@ echo "Setting KubeVela..."
 cat > /home/ubuntu/install_kubevela.sh << 'EOF'
 #!/bin/bash
 echo "Start install_kubevela.sh"
+echo "-----${KUBECONFIG}---------"
+sudo cat ${KUBECONFIG}
+echo "--------------"
 sudo -H -E -u ubuntu bash -c 'vela install -y --version 1.9.11'
 echo "Vela installation done."
 if [ "$SERVERLESS_ENABLED" == "yes" ]; then
