@@ -12,6 +12,9 @@ echo "NEBULOUS_SCRIPTS_BRANCH is set to: $NEBULOUS_SCRIPTS_BRANCH"
 if [[ "$CONTAINERIZATION_FLAVOR" == "k3s" ]]; then
   export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
   echo "KUBECONFIG=${KUBECONFIG}" | sudo tee -a /etc/environment
+else
+  export KUBECONFIG=/home/ubuntu/.kube/config
+  echo "KUBECONFIG=${KUBECONFIG}" | sudo tee -a /etc/environment
 fi
 
 while true; do
@@ -50,13 +53,90 @@ echo "Setting KubeVela..."
 # Function to check for worker nodes and install KubeVela
 cat > /home/ubuntu/install_kubevela.sh << 'EOF'
 #!/bin/bash
+echo "Start install_kubevela.sh"
+echo "-----${KUBECONFIG}---------"
+sudo cat ${KUBECONFIG}
+echo "--------------"
+sudo -H -E -u ubuntu bash -c 'vela install -y --version 1.9.11'
+echo "Vela installation done."
+if [ "$SERVERLESS_ENABLED" == "yes" ]; then
+  echo "Serverless installation."
+
+  # Install Cosign
+  export COSIGN_VERSION=$(curl -s https://api.github.com/repos/sigstore/cosign/releases/latest | jq -r '.tag_name')
+  sudo curl -LO "https://github.com/sigstore/cosign/releases/download/${COSIGN_VERSION}/cosign-linux-amd64"
+  sudo mv cosign-linux-amd64 /usr/local/bin/cosign
+  sudo chmod +x /usr/local/bin/cosign
+
+  # Update system and install jq
+  sudo apt update
+  sudo apt install -y jq
+
+  # Apply Knative Serving CRDs and core components
+  kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1.12.4/serving-crds.yaml
+  kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1.12.4/serving-core.yaml
+
+  # Download and apply Kourier
+  sudo wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/$NEBULOUS_SCRIPTS_BRANCH/serverless/kourier.yaml
+  kubectl apply -f kourier.yaml
+
+  sudo wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/$NEBULOUS_SCRIPTS_BRANCH/serverless/serverless-platform-definition.yaml
+  kubectl apply -f serverless-platform-definition.yaml
+
+
+  sudo wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/$NEBULOUS_SCRIPTS_BRANCH/serverless/knative-serving-definition.yaml
+  kubectl apply -f knative-serving-definition.yaml
+
+  sudo wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/$NEBULOUS_SCRIPTS_BRANCH/serverless/config-features.yaml
+  kubectl apply -f config-features.yaml
+
+  # Patch config-domain with PUBLIC_IP
+  MASTER_IP=$(curl -s ifconfig.me)
+
+  # Patch config-domain with MASTER_IP
+  kubectl patch configmap/config-domain \
+    --namespace knative-serving \
+    --type merge \
+    --patch "{\"data\":{\"${MASTER_IP}.sslip.io\":\"\"}}"
+
+  # Patch config-network to use Kourier ingress
+  kubectl patch configmap/config-network \
+    --namespace knative-serving \
+    --type merge \
+    --patch '{"data":{"ingress-class":"kourier.ingress.networking.knative.dev"}}'
+
+  # Apply default domain configuration
+  kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1.12.4/serving-default-domain.yaml
+
+  if [ -n "$LOCAL_SERVERLESS_SERVICES" ]; then
+    echo "LOCAL_SERVERLESS_SERVICES is set to: $LOCAL_SERVERLESS_SERVICES"
+
+    sudo wget -q -O /usr/local/bin/label-serverless-services.sh \
+      https://raw.githubusercontent.com/eu-nebulous/sal-scripts/$NEBULOUS_SCRIPTS_BRANCH/serverless/label-serverless-services.sh
+
+    sudo chmod +x /usr/local/bin/label-serverless-services.sh
+
+    sudo touch /var/log/label-serverless-services.log
+    sudo chown ubuntu:ubuntu /var/log/label-serverless-services.log
+
+    nohup /usr/local/bin/label-serverless-services.sh \
+      >> /var/log/label-serverless-services.log 2>&1 &
+  fi
+fi
+echo "End install_kubevela.sh"
+EOF
+
+chmod +x /home/ubuntu/install_kubevela.sh
+
+cat > /home/ubuntu/kubevela_installer_service.sh << 'EOF'
+#!/bin/bash
 
 # Wait for at least one worker node to be ready
 while true; do
     WORKER_NODES=$(sudo -H -E -u ubuntu kubectl get nodes --selector='!node-role.kubernetes.io/control-plane' -o json | jq '.items | length')
     if [ "$WORKER_NODES" -gt 0 ]; then
         echo "$(date '+%Y-%m-%d %H:%M:%S') - Found $WORKER_NODES worker node(s), proceeding with KubeVela installation..." >> /home/ubuntu/vela.txt
-        sudo -H -E -u ubuntu bash -c 'nohup vela install --version 1.9.11 >> /home/ubuntu/vela.txt 2>&1'
+        /home/ubuntu/install_kubevela.sh >> /home/ubuntu/vela.txt 2>&1
         # Disable the service after successful installation
         sudo systemctl disable kubevela-installer.service
         exit 0
@@ -65,11 +145,10 @@ while true; do
     sleep 10
 done
 EOF
-
-chmod +x /home/ubuntu/install_kubevela.sh
+chmod +x /home/ubuntu/kubevela_installer_service.sh
 
 # Create systemd service file
-cat << 'EOF' | sudo tee /etc/systemd/system/kubevela-installer.service
+cat << EOF | sudo tee /etc/systemd/system/kubevela-installer.service
 [Unit]
 Description=KubeVela One-time Installer Service
 After=network.target
@@ -77,8 +156,13 @@ After=network.target
 [Service]
 Type=simple
 User=ubuntu
-ExecStart=/home/ubuntu/install_kubevela.sh
+ExecStart=/home/ubuntu/kubevela_installer_service.sh
 Restart=no
+Environment="LOCAL_SERVERLESS_SERVICES=${LOCAL_SERVERLESS_SERVICES}"
+Environment="SERVERLESS_ENABLED=${SERVERLESS_ENABLED}"
+Environment="APPLICATION_ID=${APPLICATION_ID}"
+Environment="NEBULOUS_SCRIPTS_BRANCH=${NEBULOUS_SCRIPTS_BRANCH}"
+Environment="KUBECONFIG=${KUBECONFIG}"
 
 [Install]
 WantedBy=multi-user.target
@@ -126,68 +210,6 @@ $dau bash -c 'helm install solver nebulous/nebulous-optimiser-solver \
 echo "Add volumes provisioner"
 $dau bash -c "kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.27/deploy/local-path-storage.yaml"  
 
-if [ "$SERVERLESS_ENABLED" == "yes" ]; then
-  echo "Serverless installation."
-
-  # Install Cosign
-  export COSIGN_VERSION=$(curl -s https://api.github.com/repos/sigstore/cosign/releases/latest | jq -r '.tag_name')
-  curl -LO "https://github.com/sigstore/cosign/releases/download/${COSIGN_VERSION}/cosign-linux-amd64"
-  sudo mv cosign-linux-amd64 /usr/local/bin/cosign
-  sudo chmod +x /usr/local/bin/cosign
-
-  # Update system and install jq
-  sudo apt update
-  sudo apt install -y jq
-
-  # Apply Knative Serving CRDs and core components
-  kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1.12.4/serving-crds.yaml
-  kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1.12.4/serving-core.yaml
-
-  # Download and apply Kourier
-  wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/$NEBULOUS_SCRIPTS_BRANCH/serverless/kourier.yaml
-  kubectl apply -f kourier.yaml
-
-  wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/$NEBULOUS_SCRIPTS_BRANCH/serverless/serverless-platform-definition.yaml
-  kubectl apply -f serverless-platform-definition.yaml
-
-  wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/$NEBULOUS_SCRIPTS_BRANCH/serverless/config-features.yaml
-  kubectl apply -f config-features.yaml
-
-  # Patch config-domain with PUBLIC_IP
-  MASTER_IP=$(curl -s ifconfig.me)
-
-  # Patch config-domain with MASTER_IP
-  kubectl patch configmap/config-domain \
-    --namespace knative-serving \
-    --type merge \
-    --patch "{\"data\":{\"${MASTER_IP}.sslip.io\":\"\"}}"
-
-  # Patch config-network to use Kourier ingress
-  kubectl patch configmap/config-network \
-    --namespace knative-serving \
-    --type merge \
-    --patch '{"data":{"ingress-class":"kourier.ingress.networking.knative.dev"}}'
-
-  # Apply default domain configuration
-  kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1.12.4/serving-default-domain.yaml
-
-  kubectl apply -f https://raw.githubusercontent.com/kubevela/samples/master/06.Knative_App/componentdefinition-knative-serving.yaml
-
-  if [ -n "$LOCAL_SERVERLESS_SERVICES" ]; then
-    echo "LOCAL_SERVERLESS_SERVICES is set to: $LOCAL_SERVERLESS_SERVICES"
-
-    sudo wget -q -O /usr/local/bin/label-serverless-services.sh \
-      https://raw.githubusercontent.com/eu-nebulous/sal-scripts/$NEBULOUS_SCRIPTS_BRANCH/serverless/label-serverless-services.sh
-
-    sudo chmod +x /usr/local/bin/label-serverless-services.sh
-
-    sudo touch /var/log/label-serverless-services.log
-    sudo chown ubuntu:ubuntu /var/log/label-serverless-services.log
-
-    nohup /usr/local/bin/label-serverless-services.sh \
-      >> /var/log/label-serverless-services.log 2>&1 &
-  fi
-fi
 
 if [ "$WORKFLOW_ENABLED" == "yes" ]; then
   echo "Workflow installation.";
@@ -199,4 +221,16 @@ if [ "$WORKFLOW_ENABLED" == "yes" ]; then
 
   echo "Workflow installation completed.";
 fi
+
+echo "Installing OPA Gatekeeper..."
+wget https://raw.githubusercontent.com/eu-nebulous/security-manager/dev/OPA-GATEKEEPER-INSTALL.sh
+chmod +x OPA-GATEKEEPER-INSTALL.sh
+./OPA-GATEKEEPER-INSTALL.sh
+
+echo "Installing Security Manager..."
+$dau bash -c 'helm install security-manager nebulous/nebulous-security-manager \
+  --set-file configMap.k3sConfig="$KUBECONFIG" \
+  --set tolerations[0].key="node-role.kubernetes.io/control-plane" \
+  --set tolerations[0].operator="Exists" \
+  --set tolerations[0].effect="NoSchedule"'
 
