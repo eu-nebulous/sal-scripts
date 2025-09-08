@@ -133,9 +133,9 @@ cat > /home/ubuntu/kubevela_installer_service.sh << 'EOF'
 
 is_vela_installed() {
   if vela ls &>/dev/null; then
-      exit 0
+      return 0
   else
-      exit 1
+      return 1
   fi
 }
 
