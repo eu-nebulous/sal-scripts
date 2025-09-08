@@ -131,15 +131,28 @@ chmod +x /home/ubuntu/install_kubevela.sh
 cat > /home/ubuntu/kubevela_installer_service.sh << 'EOF'
 #!/bin/bash
 
+is_vela_installed() {
+  if vela ls &>/dev/null; then
+      exit 0
+  else
+      exit 1
+  fi
+}
+
 # Wait for at least one worker node to be ready
 while true; do
     WORKER_NODES=$(sudo -H -E -u ubuntu kubectl get nodes --selector='!node-role.kubernetes.io/control-plane' -o json | jq '.items | length')
     if [ "$WORKER_NODES" -gt 0 ]; then
         echo "$(date '+%Y-%m-%d %H:%M:%S') - Found $WORKER_NODES worker node(s), proceeding with KubeVela installation..." >> /home/ubuntu/vela.txt
         /home/ubuntu/install_kubevela.sh >> /home/ubuntu/vela.txt 2>&1
-        # Disable the service after successful installation
-        sudo systemctl disable kubevela-installer.service
-        exit 0
+        if is_vela_installed; then
+          # Disable the service after successful installation
+          sudo systemctl disable kubevela-installer.service
+          exit 0
+        else
+          echo "'vela ls' returned an error. Trying again in 30 seconds..." >> /home/ubuntu/vela.txt
+          sleep 30
+        fi
     fi
     echo "$(date '+%Y-%m-%d %H:%M:%S') - Waiting for worker nodes to be ready..." >> /home/ubuntu/vela.txt
     sleep 10
