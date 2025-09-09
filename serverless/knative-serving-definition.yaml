@@ -20,26 +20,32 @@ spec:
             labels: {
               "app.oam.dev/component": context.name
             }
-            annotations: parameter.annotations
           }
           spec: {
             template:
               spec:
                 containers: [{
-                  image:        parameter.image
-                  env:          parameter.env
-                  resources:    parameter.resources
-                  nodeSelector: parameter.nodeSelector
-                  tolerations:  parameter.tolerations
-                  affinity:     parameter.affinity
+                  name: context.name
+
+                  image: parameter.image
+
+                  if parameter.imagePullPolicy != _|_ {
+                    imagePullPolicy: parameter.imagePullPolicy
+                  }
+
+                  if parameter.env != _|_ {
+                    env: parameter.env
+                  }
+
+                  if parameter.resources != _|_ {
+                    resources: parameter.resources
+                  }
                 }]
           }
         }
         parameter: {
-          annotations?: {
-            [string]: string
-          }
           image: string
+          imagePullPolicy?: string
           env?: [...{
             // +usage=Environment variable name
             name: string
@@ -64,28 +70,6 @@ spec:
             requests?: {
               cpu?: string
               memory?: string
-            }
-          }
-          nodeSelector?: {
-            [string]: string
-          }
-          tolerations?: [...{
-            key: string
-            operator?: string
-            value?: string
-            effect?: string
-          }]
-          affinity?: {
-            nodeAffinity?: {
-              requiredDuringSchedulingIgnoredDuringExecution?: {
-                nodeSelectorTerms: [...{
-                  matchExpressions: [...{
-                    key: string
-                    operator: string
-                    values?: [...string]
-                  }]
-                }]
-              }
             }
           }
         }
