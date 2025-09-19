@@ -107,6 +107,7 @@ $dau bash -c 'helm install ems nebulous/ems-server \
   --set app_uuid=$APPLICATION_ID \
   --set broker_address=$BROKER_ADDRESS \
   --set image.tag="r1" \
+  --set client.image.tag="ems-client-r1" \
   --set broker_port=$BROKER_PORT'
 
 
