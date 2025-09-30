@@ -123,7 +123,7 @@ if [ `grep Swap /proc/meminfo | grep SwapTotal: | cut -d" " -f14` == "0" ];
 	then
 		log_print INFO "The swap memory is Off"
 	else
-		sudo swapoff –a || { log_print ERROR "swap memory can't be turned off "; exit $EXITCODE; }
+		sudo swapoff -a || { log_print ERROR "swap memory can't be turned off "; exit $EXITCODE; }
 	fi
 
 
