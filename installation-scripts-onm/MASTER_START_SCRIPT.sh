@@ -41,9 +41,9 @@ then
 else
   echo "User Ubuntu is not found"
 fi
-#$dau kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml;
-$dau bash -c 'helm repo add cilium https://helm.cilium.io/ && helm repo update'
-$dau bash -c 'helm install cilium cilium/cilium --namespace kube-system --set encryption.enabled=true --set encryption.type=wireguard'
+$dau bash -c 'kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml';
+#$dau bash -c 'helm repo add cilium https://helm.cilium.io/ && helm repo update'
+#$#dau bash -c 'helm install cilium cilium/cilium --namespace kube-system --set encryption.enabled=true --set encryption.type=wireguard'
 
 echo "Installing Vela CLI"
 $dau bash -c 'curl -fsSl https://kubevela.io/script/install.sh | bash'
