@@ -57,7 +57,18 @@ echo "Start install_kubevela.sh"
 echo "-----${KUBECONFIG}---------"
 sudo cat ${KUBECONFIG}
 echo "--------------"
-sudo -H -E -u ubuntu bash -c 'vela install -y --version 1.9.11'
+# Retry vela install up to 5 times with a 10-second delay between attempts
+max_attempts=5
+attempt=1
+until sudo -H -E -u ubuntu bash -c 'vela install -y --version 1.9.11'; do
+  if (( attempt >= max_attempts )); then
+    echo "Vela installation failed after $attempt attempts. Exiting."
+    exit 1
+  fi
+  echo "Vela install failed. Retrying in 10 seconds... ($attempt/$max_attempts)"
+  attempt=$((attempt+1))
+  sleep 10
+done
 echo "Vela installation done."
 if [ "$SERVERLESS_ENABLED" == "yes" ]; then
   echo "Serverless installation."
