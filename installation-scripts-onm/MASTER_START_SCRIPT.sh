@@ -49,6 +49,31 @@ echo "Installing Vela CLI"
 $dau bash -c 'curl -fsSl https://kubevela.io/script/install.sh | bash'
 echo "Configuration complete."
 
+cat > /home/ubuntu/kubevela-values.yaml << EOF
+nodeSelector:
+  "node-role.kubernetes.io/control-plane": ""
+tolerations:
+  - key: "node-role.kubernetes.io/control-plane"
+    operator: "Exists"
+    effect: "NoSchedule"
+EOF
+
+$dau bash -c 'helm repo add kubevela https://kubevela.github.io/chart && helm repo update'
+
+cat > /home/ubuntu/patch-pin-to-control-plane.yaml << EOF
+apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      nodeSelector:
+        "node-role.kubernetes.io/control-plane": ""
+      tolerations:
+        - key: "node-role.kubernetes.io/control-plane"
+          operator: "Exists"
+          effect: "NoSchedule"
+EOF
+
 echo "Setting KubeVela..."
 # Function to check for worker nodes and install KubeVela
 cat > /home/ubuntu/install_kubevela.sh << 'EOF'
@@ -60,7 +85,7 @@ echo "--------------"
 # Retry vela install up to 5 times with a 10-second delay between attempts
 max_attempts=5
 attempt=1
-until sudo -H -E -u ubuntu bash -c 'vela install -y --version 1.9.11'; do
+until sudo -H -E -u ubuntu bash -c 'helm upgrade --install --create-namespace -n vela-system kubevela kubevela/vela-core --version 1.9.11 --values /home/ubuntu/kubevela-values.yaml --wait'; do
   if (( attempt >= max_attempts )); then
     echo "Vela installation failed after $attempt attempts. Exiting."
     exit 1
@@ -86,6 +111,10 @@ if [ "$SERVERLESS_ENABLED" == "yes" ]; then
   # Apply Knative Serving CRDs and core components
   kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1.12.4/serving-crds.yaml
   kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1.12.4/serving-core.yaml
+  kubectl patch deployment -n knative-serving activator --patch "$(cat /home/ubuntu/patch-pin-to-control-plane.yaml)"
+  kubectl patch deployment -n knative-serving autoscaler --patch "$(cat /home/ubuntu/patch-pin-to-control-plane.yaml)"
+  kubectl patch deployment -n knative-serving controller --patch "$(cat /home/ubuntu/patch-pin-to-control-plane.yaml)"
+  kubectl patch deployment -n knative-serving webhook --patch "$(cat /home/ubuntu/patch-pin-to-control-plane.yaml)"
 
   # Download and apply Kourier
   sudo wget https://raw.githubusercontent.com/eu-nebulous/sal-scripts/$NEBULOUS_SCRIPTS_BRANCH/serverless/kourier.yaml

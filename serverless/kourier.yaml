@@ -399,6 +399,12 @@ spec:
               memory: 500Mi
       restartPolicy: Always
       serviceAccountName: net-kourier
+      nodeSelector:
+        "node-role.kubernetes.io/control-plane": ""
+      tolerations:
+        - key: "node-role.kubernetes.io/control-plane"
+          operator: "Exists"
+          effect: "NoSchedule"
 ---
 apiVersion: v1
 kind: Service
@@ -543,6 +549,12 @@ spec:
           configMap:
             name: kourier-bootstrap
       restartPolicy: Always
+      nodeSelector:
+        "node-role.kubernetes.io/control-plane": ""
+      tolerations:
+        - key: "node-role.kubernetes.io/control-plane"
+          operator: "Exists"
+          effect: "NoSchedule"
 ---
 apiVersion: v1
 kind: Service
