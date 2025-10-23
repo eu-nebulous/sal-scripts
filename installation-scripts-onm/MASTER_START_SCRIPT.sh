@@ -75,6 +75,8 @@ spec:
 EOF
 
 echo "Setting KubeVela..."
+# Delete the flag file if it exists
+$dau bash -c 'rm -f /tmp/vela_ready.flag'
 # Function to check for worker nodes and install KubeVela
 cat > /home/ubuntu/install_kubevela.sh << 'EOF'
 #!/bin/bash
@@ -186,8 +188,14 @@ while true; do
         echo "$(date '+%Y-%m-%d %H:%M:%S') - Found $WORKER_NODES worker node(s), proceeding with KubeVela installation..." >> /home/ubuntu/vela.txt
         /home/ubuntu/install_kubevela.sh >> /home/ubuntu/vela.txt 2>&1
         if is_vela_installed; then
+          echo "Vela installation successful" >> /home/ubuntu/vela.txt
           # Disable the service after successful installation
+          echo "Disabling kubevela-installer.service" >> /home/ubuntu/vela.txt
           sudo systemctl disable kubevela-installer.service
+          # Create a flag file to indicate that vela is ready. This flag will be read by the script that runs `vela up -f ...`.
+          # This is is needed to avoid the vela up command to fail if the vela installation has not completed yet.
+          echo "touching /tmp/vela_ready.flag" >> /home/ubuntu/vela.txt
+          touch /tmp/vela_ready.flag
           exit 0
         else
           echo "'vela ls' returned an error. Trying again in 30 seconds..." >> /home/ubuntu/vela.txt
