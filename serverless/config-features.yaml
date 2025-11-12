@@ -50,13 +50,13 @@ data:
   #
   # WARNING: Cannot safely be disabled once enabled.
   # See: https://knative.dev/docs/serving/feature-flags/#kubernetes-node-selector
-  kubernetes.podspec-nodeselector: "disabled"
+  kubernetes.podspec-nodeselector: "enabled"
 
   # Indicates whether Kubernetes tolerations support is enabled
   #
   # WARNING: Cannot safely be disabled once enabled
   # See: https://knative.dev/docs/serving/feature-flags/#kubernetes-toleration
-  kubernetes.podspec-tolerations: "disabled"
+  kubernetes.podspec-tolerations: "enabled"
 
   # Indicates whether Kubernetes FieldRef support is enabled
   #
