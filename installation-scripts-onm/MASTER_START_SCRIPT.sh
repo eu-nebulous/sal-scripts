@@ -58,7 +58,7 @@ tolerations:
     effect: "NoSchedule"
 EOF
 
-$dau bash -c 'helm repo add kubevela https://kubevela.github.io/chart && helm repo update'
+$dau bash -c 'helm repo add kubevela https://kubevela.github.io/charts && helm repo update'
 
 cat > /home/ubuntu/patch-pin-to-control-plane.yaml << EOF
 apiVersion: apps/v1
