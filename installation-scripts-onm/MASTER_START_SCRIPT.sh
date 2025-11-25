@@ -41,9 +41,16 @@ then
 else
   echo "User Ubuntu is not found"
 fi
-$dau bash -c 'kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml';
-#$dau bash -c 'helm repo add cilium https://helm.cilium.io/ && helm repo update'
-#$#dau bash -c 'helm install cilium cilium/cilium --namespace kube-system --set encryption.enabled=true --set encryption.type=wireguard'
+
+echo "Deciding on the pod network plugin to use. USE_FLANNEL to yes to use Flannel, otherwise it will use Cilium"
+if [ "$USE_FLANNEL" == "yes" ]; then
+  echo "Using Flannel"
+  $dau bash -c 'kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml';
+else
+  echo "Using Cilium"
+  $dau bash -c 'helm repo add cilium https://helm.cilium.io/ && helm repo update'
+  $dau bash -c 'helm install cilium cilium/cilium --namespace kube-system --set encryption.enabled=true --set encryption.type=wireguard'
+fi
 
 echo "Installing Vela CLI"
 $dau bash -c 'curl -fsSl https://kubevela.io/script/install.sh | bash'
