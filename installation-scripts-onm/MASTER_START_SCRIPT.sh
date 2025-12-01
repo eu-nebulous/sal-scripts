@@ -251,7 +251,7 @@ if [[ -n "${PRIVATE_DOCKER_REGISTRY_SERVER}" ]]; then
     $dau bash -c "kubectl delete secret docker-registry regcred --ignore-not-found"
     $dau bash -c "kubectl create secret docker-registry regcred --docker-server=$PRIVATE_DOCKER_REGISTRY_SERVER --docker-username=$PRIVATE_DOCKER_REGISTRY_USERNAME --docker-password=$PRIVATE_DOCKER_REGISTRY_PASSWORD --docker-email=$PRIVATE_DOCKER_REGISTRY_EMAIL"
 
-
+fi
 
 
 if [ "$COMPONENTS_IN_CLUSTER" == "yes" ]; then
@@ -483,9 +483,9 @@ if [ "$COMPONENTS_IN_CLUSTER" == "yes" ]; then
       --set amplLicense.keyValue=\"$LICENSE_AMPL\" \
       --set application.id=\"$APPLICATION_ID\" \
       --set activemq.ACTIVEMQ_HOST=\"nebulous-activemq\" \
-      --set activemq.ACTIVEMQ_PORT=\"61616\""
-      #--set activemq.ACTIVEMQ_USER=\"admin\""
-      #--set activemqSecret.keyValue=\"$APP_BROKER_ADMIN_PASSWORD\" \
+      --set activemq.ACTIVEMQ_PORT=\"61616\"" \
+      --set activemq.ACTIVEMQ_USER=\"admin\"" \
+      --set activemqSecret.keyValue=\"$APP_BROKER_ADMIN_PASSWORD\" 
 else
   echo "Installing EMS"
   $dau bash -c 'helm install ems nebulous/ems-server \
