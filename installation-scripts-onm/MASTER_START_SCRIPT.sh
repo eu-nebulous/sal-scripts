@@ -231,10 +231,7 @@ Environment="KUBECONFIG=${KUBECONFIG}"
 WantedBy=multi-user.target
 EOF
 
-# Enable and start the service
-sudo systemctl daemon-reload
-sudo systemctl enable kubevela-installer.service
-sudo systemctl start kubevela-installer.service
+
 
 $dau bash -c 'helm repo add nebulous https://eu-nebulous.github.io/helm-charts/'
 $dau bash -c 'helm repo add netdata https://netdata.github.io/helmchart/'
@@ -331,7 +328,8 @@ if [ "$COMPONENTS_IN_CLUSTER" == "yes" ]; then
   --set brokerEnv[7].name=\"ANONYMOUS_LOGIN\" \
   --set-string brokerEnv[7].value=\"true\" \
   --set service.activemQNodePort=$app_broker_port \
-  --set service.type=\"NodePort\""
+  --set service.type=\"NodePort\" \
+  --wait"
   
   # install influxdb app
   echo "Installing InfluxDB"
@@ -342,7 +340,8 @@ if [ "$COMPONENTS_IN_CLUSTER" == "yes" ]; then
   --set fullnameOverride=\"nebulous-influxdb\" \
   --set secrets.DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=\"$INFLUXDB_ADMIN_TOKEN\" \
   --set image.tag=\"main\" \
-  --set service.type=\"NodePort\""
+  --set service.type=\"NodePort\" \
+  --wait"
 
   # install ai anomaly detection app
   echo "Installing AI Anomaly Detection"
@@ -531,3 +530,9 @@ if [ "$SECURITY_MANAGER_ENABLED" == "yes" ]; then
     --set tolerations[0].effect="NoSchedule"'
 fi
 
+
+
+# Enable and start the vela install service. Do this last to make sure message broker is ready.
+sudo systemctl daemon-reload
+sudo systemctl enable kubevela-installer.service
+sudo systemctl start kubevela-installer.service
