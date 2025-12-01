@@ -265,228 +265,220 @@ if [ "$COMPONENTS_IN_CLUSTER" == "yes" ]; then
   # If PUBLIC_IP is given, use it as app_broker_address. Otherwise, determine it.
   app_broker_address=${PUBLIC_IP}
 
-  echo "Starting Solver"
-  $dau bash -c 'helm install solver nebulous/nebulous-optimiser-solver \
-    --set tolerations[0].key="node-role.kubernetes.io/control-plane" \
-    --set tolerations[0].operator="Exists" \
-    --set tolerations[0].effect="NoSchedule" \
-    --set amplLicense.keyValue="$LICENSE_AMPL" \
-    --set application.id=$APPLICATION_ID \
-    --set activemq.ACTIVEMQ_HOST=$BROKER_ADDRESS \
-    --set activemq.ACTIVEMQ_PORT=$BROKER_PORT \
-    --set image.tag="main-3aee09dd6d701bc54d9a5ed173dfbcc4e2808e9f-20250506181924"'
-    # If public_ip is not set, fall back to polling multiple services
-    if [[ -z "$app_broker_address" ]]; then
-      echo "No IP provided. Polling external services to determine public IP..."
+  # If public_ip is not set, fall back to polling multiple services
+  if [[ -z "$app_broker_address" ]]; then
+    echo "No IP provided. Polling external services to determine public IP..."
 
-      SERVICES=(
-        "http://httpbin.org/ip"
-        "http://ipinfo.io/ip"
-        "http://api.ipify.org"
-        "http://ifconfig.me"
-        "http://checkip.amazonaws.com"
-      )
+    SERVICES=(
+      "http://httpbin.org/ip"
+      "http://ipinfo.io/ip"
+      "http://api.ipify.org"
+      "http://ifconfig.me"
+      "http://checkip.amazonaws.com"
+    )
 
-      extract_ip() {
-        echo "$1" | grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}'
-      }
+    extract_ip() {
+      echo "$1" | grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}'
+    }
 
-      for service in "${SERVICES[@]}"; do
-        echo "Trying $service ..."
-        response=$(curl -s --max-time 5 "$service")
-        ip=$(extract_ip "$response")
+    for service in "${SERVICES[@]}"; do
+      echo "Trying $service ..."
+      response=$(curl -s --max-time 5 "$service")
+      ip=$(extract_ip "$response")
 
-        if [[ -n "$ip" ]]; then
-          app_broker_address="$ip"
-          break
-        fi
-      done
-    fi
+      if [[ -n "$ip" ]]; then
+        app_broker_address="$ip"
+        break
+      fi
+    done
+  fi
 
-    echo "BROKER ADDRESS: $app_broker_address:$app_broker_port"
+  echo "BROKER ADDRESS: $app_broker_address:$app_broker_port"
 
-    # generate a random password for broker admin if not set
-    if [[ -z "${APP_BROKER_ADMIN_PASSWORD}" ]]; then
-        echo "ERROR: APP_BROKER_ADMIN_PASSWORD environment variable is not set. Generating random password."
-        APP_BROKER_ADMIN_PASSWORD=$(openssl rand -base64 32)
-        echo "Generated APP_BROKER_ADMIN_PASSWORD: $APP_BROKER_ADMIN_PASSWORD"
-    fi
-    # generate a random token for influxdb
-    INFLUXDB_ADMIN_TOKEN=$(openssl rand -base64 32)
-    echo "Generated INFLUXDB_ADMIN_TOKEN: $INFLUXDB_ADMIN_TOKEN"
+  # generate a random password for broker admin if not set
+  if [[ -z "${APP_BROKER_ADMIN_PASSWORD}" ]]; then
+      echo "ERROR: APP_BROKER_ADMIN_PASSWORD environment variable is not set. Generating random password."
+      APP_BROKER_ADMIN_PASSWORD=$(openssl rand -base64 32)
+      echo "Generated APP_BROKER_ADMIN_PASSWORD: $APP_BROKER_ADMIN_PASSWORD"
+  fi
+  # generate a random token for influxdb
+  INFLUXDB_ADMIN_TOKEN=$(openssl rand -base64 32)
+  echo "Generated INFLUXDB_ADMIN_TOKEN: $INFLUXDB_ADMIN_TOKEN"
 
-    # install activemq app
-    echo "Installing ActiveMQ"
-    $dau bash -c "helm install nebulous-activemq-app nebulous/nebulous-activemq-app \
+  # install activemq app
+  echo "Installing ActiveMQ"
+  $dau bash -c "helm install nebulous-activemq-app nebulous/nebulous-activemq-app \
+  --set tolerations[0].key=\"node-role.kubernetes.io/control-plane\" \
+  --set tolerations[0].operator=\"Exists\" \
+  --set tolerations[0].effect=\"NoSchedule\" \
+  --set image.repository=\"quay.io/nebulous/activemq-broker-app-cluster\" \
+  --set image.tag=\"componentsinappcluster\" \
+  --set fullnameOverride=\"nebulous-activemq\" \
+  --set brokerEnv[0].name=\"ARTEMIS_USER\" \
+  --set brokerEnv[0].value=\"admin\" \
+  --set brokerEnv[1].name=\"ARTEMIS_PASSWORD\" \
+  --set-string brokerEnv[1].value=\"$APP_BROKER_ADMIN_PASSWORD\" \
+  --set brokerEnv[2].name=\"ACTIVEMQ_ADMIN_PASSWORD\" \
+  --set-string brokerEnv[2].value=\"$APP_BROKER_ADMIN_PASSWORD\" \
+  --set brokerEnv[3].name=\"APPLICATION_ID\" \
+  --set-string brokerEnv[3].value=\"$APPLICATION_ID\" \
+  --set brokerEnv[4].name=\"NEBULOUS_MESSAGE_BRIDGE_PASSWORD\" \
+  --set-string brokerEnv[4].value=\"$NEBULOUS_MESSAGE_BRIDGE_PASSWORD\" \
+  --set brokerEnv[5].name=\"NEBULOUS_CONTROL_PLANE_BROKER_ADDRESS\" \
+  --set-string brokerEnv[5].value=\"$BROKER_ADDRESS:$BROKER_PORT\" \
+  --set brokerEnv[6].name=\"APP_BROKER_ADDRESS\" \
+  --set-string brokerEnv[6].value=\"$app_broker_address:$app_broker_port\" \
+  --set brokerEnv[7].name=\"ANONYMOUS_LOGIN\" \
+  --set-string brokerEnv[7].value=\"true\" \
+  --set service.activemQNodePort=$app_broker_port \
+  --set service.type=\"NodePort\""
+  
+  # install influxdb app
+  echo "Installing InfluxDB"
+  $dau bash -c "helm install nebulous-influxdb-app nebulous/nebulous-influxdb-app \
+  --set tolerations[0].key=\"node-role.kubernetes.io/control-plane\" \
+  --set tolerations[0].operator=\"Exists\" \
+  --set tolerations[0].effect=\"NoSchedule\" \
+  --set fullnameOverride=\"nebulous-influxdb\" \
+  --set secrets.DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=\"$INFLUXDB_ADMIN_TOKEN\" \
+  --set image.tag=\"main\" \
+  --set service.type=\"NodePort\""
+
+  # install ai anomaly detection app
+  echo "Installing AI Anomaly Detection"
+  $dau bash -c "helm install nebulous-ai-anomaly-detection nebulous/nebulous-ai-anomaly-detection \
+  --set tolerations[0].key=\"node-role.kubernetes.io/control-plane\" \
+  --set tolerations[0].operator=\"Exists\" \
+  --set tolerations[0].effect=\"NoSchedule\" \
+  --set env[0].name=\"BROKER_ADDRESS\" \
+  --set-string env[0].value=\"nebulous-activemq\" \
+  --set env[1].name=\"BROKER_PORT\" \
+  --set-string env[1].value=61616 \
+  --set env[2].name=\"BROKER_USERNAME\" \
+  --set-string env[2].value=\"admin\" \
+  --set env[3].name=\"BROKER_PASSWORD\" \
+  --set-string env[3].value=\"$APP_BROKER_ADMIN_PASSWORD\" \
+  --set env[4].name=\"INFLUXDB_TOKEN\" \
+  --set-string env[4].value=\"$INFLUXDB_ADMIN_TOKEN\" \
+  --set image.tag=\"main\""
+
+  # install prediction orchestrator app
+  echo "Installing Prediction Orchestrator"
+  $dau bash -c "helm install nebulous-prediction-orchestrator nebulous/nebulous-prediction-orchestrator \
+  --set tolerations[0].key=\"node-role.kubernetes.io/control-plane\" \
+  --set tolerations[0].operator=\"Exists\" \
+  --set tolerations[0].effect=\"NoSchedule\" \
+  --set application.env.exnPort=\"61616\" \
+  --set application.env.exnHost=\"nebulous-activemq\" \
+  --set application.env.exnUsername=\"admin\" \
+  --set application.env.exnPassword=\"$APP_BROKER_ADMIN_PASSWORD\" \
+  --set application.env.influxToken='$INFLUXDB_TOKEN' \
+  --set image.tag=\"main\""
+
+  # install lstm predictor app
+  echo "Installing LSTM Predictor"
+  $dau bash -c "helm install nebulous-lstm-predictor nebulous/nebulous-lstm-predictor \
+  --set tolerations[0].key=\"node-role.kubernetes.io/control-plane\" \
+  --set tolerations[0].operator=\"Exists\" \
+  --set tolerations[0].effect=\"NoSchedule\" \
+  --set env[0].name=\"BROKER_ADDRESS\" \
+  --set env[0].value=\"nebulous-activemq\" \
+  --set env[1].name=\"BROKER_PORT\" \
+  --set-string env[1].value=61616 \
+  --set env[2].name=\"BROKER_USERNAME\" \
+  --set-string env[2].value=\"admin\" \
+  --set env[3].name=\"BROKER_PASSWORD\" \
+  --set-string env[3].value=\"$APP_BROKER_ADMIN_PASSWORD\" \
+  --set env[4].name=\"INFLUXDB_TOKEN\" \
+  --set-string env[4].value=\"$INFLUXDB_ADMIN_TOKEN\" \
+  --set image.tag=\"main\" \
+  --set resources.limits.memory=\"3Gi\""
+
+  # install exponential smoothing predictor app
+  echo "Installing Exponential Smoothing Predictor"
+  $dau bash -c "helm install nebulous-exponential-smoothing-predictor nebulous/nebulous-exponential-smoothing-predictor \
+  --set tolerations[0].key=\"node-role.kubernetes.io/control-plane\" \
+  --set tolerations[0].operator=\"Exists\" \
+  --set tolerations[0].effect=\"NoSchedule\" \
+  --set env[0].name=\"broker_address\" \
+  --set env[0].value=\"nebulous-activemq\" \
+  --set env[1].name=\"broker_port\" \
+  --set-string env[1].value=61616 \
+  --set env[2].name=\"broker_username\" \
+  --set env[2].value=\"admin\" \
+  --set env[3].name=\"broker_password\" \
+  --set-string env[3].value=\"$APP_BROKER_ADMIN_PASSWORD\" \
+  --set env[4].name=\"INFLUXDB_TOKEN\" \
+  --set-string env[4].value=\"$INFLUXDB_ADMIN_TOKEN\" \
+  --set image.tag=\"main\" \
+  --set resources.limits.memory=\"3Gi\""
+
+  # install slo violation detector app
+  echo "Installing SLO Violation Detector"
+  $dau bash -c "helm install nebulous-slo-violation-detector nebulous/nebulous-slo-violation-detector \
+  --set tolerations[0].key=\"node-role.kubernetes.io/control-plane\" \
+  --set tolerations[0].operator=\"Exists\" \
+  --set tolerations[0].effect=\"NoSchedule\" \
+  --set env[0].name=\"BROKER_IP_URL\" \
+  --set env[0].value=\"nebulous-activemq\" \
+  --set env[1].name=\"BROKER_PORT\" \
+  --set-string env[1].value=61616 \
+  --set env[2].name=\"BROKER_USERNAME\" \
+  --set env[2].value=\"admin\" \
+  --set env[3].name=\"BROKER_PASSWORD\" \
+  --set-string env[3].value=\"$APP_BROKER_ADMIN_PASSWORD\" \
+  --set image.tag=\"main\""
+
+
+  # install monitoring data persistor app
+  echo "Installing Monitoring Data Persistor"
+  $dau bash -c "helm install nebulous-monitoring-data-persistor nebulous/nebulous-monitoring-data-persistor \
+  --set tolerations[0].key=\"node-role.kubernetes.io/control-plane\" \
+  --set tolerations[0].operator=\"Exists\" \
+  --set tolerations[0].effect=\"NoSchedule\" \
+  --set env[0].name=\"broker_ip\" \
+  --set env[0].value=\"nebulous-activemq\" \
+  --set env[1].name=\"broker_port\" \
+  --set-string env[1].value=61616 \
+  --set env[2].name=\"broker_username\" \
+  --set env[2].value=\"admin\" \
+  --set env[3].name=\"broker_password\" \
+  --set-string env[3].value=\"$APP_BROKER_ADMIN_PASSWORD\" \
+  --set env[4].name=\"INFLUXDB_TOKEN\" \
+  --set-string env[4].value=\"$INFLUXDB_ADMIN_TOKEN\" \
+  --set image.tag=\"main\""
+
+  # install ems server
+  echo "Installing EMS"
+  $dau bash -c "helm install ems nebulous/ems-server \
     --set tolerations[0].key=\"node-role.kubernetes.io/control-plane\" \
     --set tolerations[0].operator=\"Exists\" \
     --set tolerations[0].effect=\"NoSchedule\" \
-    --set image.repository=\"quay.io/nebulous/activemq-broker-app-cluster\" \
-    --set image.tag=\"componentsinappcluster\" \
-    --set fullnameOverride=\"nebulous-activemq\" \
-    --set brokerEnv[0].name=\"ARTEMIS_USER\" \
-    --set brokerEnv[0].value=\"admin\" \
-    --set brokerEnv[1].name=\"ARTEMIS_PASSWORD\" \
-    --set-string brokerEnv[1].value=\"$APP_BROKER_ADMIN_PASSWORD\" \
-    --set brokerEnv[2].name=\"ACTIVEMQ_ADMIN_PASSWORD\" \
-    --set-string brokerEnv[2].value=\"$APP_BROKER_ADMIN_PASSWORD\" \
-    --set brokerEnv[3].name=\"APPLICATION_ID\" \
-    --set-string brokerEnv[3].value=\"$APPLICATION_ID\" \
-    --set brokerEnv[4].name=\"NEBULOUS_MESSAGE_BRIDGE_PASSWORD\" \
-    --set-string brokerEnv[4].value=\"$NEBULOUS_MESSAGE_BRIDGE_PASSWORD\" \
-    --set brokerEnv[5].name=\"NEBULOUS_CONTROL_PLANE_BROKER_ADDRESS\" \
-    --set-string brokerEnv[5].value=\"$BROKER_ADDRESS:$BROKER_PORT\" \
-    --set brokerEnv[6].name=\"APP_BROKER_ADDRESS\" \
-    --set-string brokerEnv[6].value=\"$app_broker_address:$app_broker_port\" \
-    --set brokerEnv[7].name=\"ANONYMOUS_LOGIN\" \
-    --set-string brokerEnv[7].value=\"true\" \
-    --set service.activemQNodePort=$app_broker_port \
-    --set service.type=\"NodePort\""
-    
-    # install influxdb app
-    echo "Installing InfluxDB"
-    $dau bash -c "helm install nebulous-influxdb-app nebulous/nebulous-influxdb-app \
-    --set tolerations[0].key=\"node-role.kubernetes.io/control-plane\" \
-    --set tolerations[0].operator=\"Exists\" \
-    --set tolerations[0].effect=\"NoSchedule\" \
-    --set fullnameOverride=\"nebulous-influxdb\" \
-    --set secrets.DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=\"$INFLUXDB_ADMIN_TOKEN\" \
+    --set app_uuid=\"$APPLICATION_ID\" \
+    --set broker_address=\"nebulous-activemq\" \
+    --set broker_port=\"61616\" \
+    --set broker_username=\"admin\" \
+    --set-string broker_password=\"$APP_BROKER_ADMIN_PASSWORD\" \
+    --set client.image.tag=\"ems-client-$NEBULOUS_SCRIPTS_BRANCH\""
+
+  $dau bash -c "helm install netdata netdata/netdata"
+
+  # install solver
+  echo "Installing Solver"
+  $dau bash -c "helm install solver nebulous/nebulous-optimiser-solver \
     --set image.tag=\"main\" \
-    --set service.type=\"NodePort\""
-
-    # install ai anomaly detection app
-    echo "Installing AI Anomaly Detection"
-    $dau bash -c "helm install nebulous-ai-anomaly-detection nebulous/nebulous-ai-anomaly-detection \
     --set tolerations[0].key=\"node-role.kubernetes.io/control-plane\" \
     --set tolerations[0].operator=\"Exists\" \
     --set tolerations[0].effect=\"NoSchedule\" \
-    --set env[0].name=\"BROKER_ADDRESS\" \
-    --set-string env[0].value=\"nebulous-activemq\" \
-    --set env[1].name=\"BROKER_PORT\" \
-    --set-string env[1].value=61616 \
-    --set env[2].name=\"BROKER_USERNAME\" \
-    --set-string env[2].value=\"admin\" \
-    --set env[3].name=\"BROKER_PASSWORD\" \
-    --set-string env[3].value=\"$APP_BROKER_ADMIN_PASSWORD\" \
-    --set env[4].name=\"INFLUXDB_TOKEN\" \
-    --set-string env[4].value=\"$INFLUXDB_ADMIN_TOKEN\" \
-    --set image.tag=\"main\""
-
-    # install prediction orchestrator app
-    echo "Installing Prediction Orchestrator"
-    $dau bash -c "helm install nebulous-prediction-orchestrator nebulous/nebulous-prediction-orchestrator \
-    --set tolerations[0].key=\"node-role.kubernetes.io/control-plane\" \
-    --set tolerations[0].operator=\"Exists\" \
-    --set tolerations[0].effect=\"NoSchedule\" \
-    --set application.env.exnPort=\"61616\" \
-    --set application.env.exnHost=\"nebulous-activemq\" \
-    --set application.env.exnUsername=\"admin\" \
-    --set application.env.exnPassword=\"$APP_BROKER_ADMIN_PASSWORD\" \
-    --set application.env.influxToken='$INFLUXDB_TOKEN' \
-    --set image.tag=\"main\""
-
-    # install lstm predictor app
-    echo "Installing LSTM Predictor"
-    $dau bash -c "helm install nebulous-lstm-predictor nebulous/nebulous-lstm-predictor \
-    --set tolerations[0].key=\"node-role.kubernetes.io/control-plane\" \
-    --set tolerations[0].operator=\"Exists\" \
-    --set tolerations[0].effect=\"NoSchedule\" \
-    --set env[0].name=\"BROKER_ADDRESS\" \
-    --set env[0].value=\"nebulous-activemq\" \
-    --set env[1].name=\"BROKER_PORT\" \
-    --set-string env[1].value=61616 \
-    --set env[2].name=\"BROKER_USERNAME\" \
-    --set-string env[2].value=\"admin\" \
-    --set env[3].name=\"BROKER_PASSWORD\" \
-    --set-string env[3].value=\"$APP_BROKER_ADMIN_PASSWORD\" \
-    --set env[4].name=\"INFLUXDB_TOKEN\" \
-    --set-string env[4].value=\"$INFLUXDB_ADMIN_TOKEN\" \
-    --set image.tag=\"main\" \
-    --set resources.limits.memory=\"3Gi\""
-
-    # install exponential smoothing predictor app
-    echo "Installing Exponential Smoothing Predictor"
-    $dau bash -c "helm install nebulous-exponential-smoothing-predictor nebulous/nebulous-exponential-smoothing-predictor \
-    --set tolerations[0].key=\"node-role.kubernetes.io/control-plane\" \
-    --set tolerations[0].operator=\"Exists\" \
-    --set tolerations[0].effect=\"NoSchedule\" \
-    --set env[0].name=\"broker_address\" \
-    --set env[0].value=\"nebulous-activemq\" \
-    --set env[1].name=\"broker_port\" \
-    --set-string env[1].value=61616 \
-    --set env[2].name=\"broker_username\" \
-    --set env[2].value=\"admin\" \
-    --set env[3].name=\"broker_password\" \
-    --set-string env[3].value=\"$APP_BROKER_ADMIN_PASSWORD\" \
-    --set env[4].name=\"INFLUXDB_TOKEN\" \
-    --set-string env[4].value=\"$INFLUXDB_ADMIN_TOKEN\" \
-    --set image.tag=\"main\" \
-    --set resources.limits.memory=\"3Gi\""
-
-    # install slo violation detector app
-    echo "Installing SLO Violation Detector"
-    $dau bash -c "helm install nebulous-slo-violation-detector nebulous/nebulous-slo-violation-detector \
-    --set tolerations[0].key=\"node-role.kubernetes.io/control-plane\" \
-    --set tolerations[0].operator=\"Exists\" \
-    --set tolerations[0].effect=\"NoSchedule\" \
-    --set env[0].name=\"BROKER_IP_URL\" \
-    --set env[0].value=\"nebulous-activemq\" \
-    --set env[1].name=\"BROKER_PORT\" \
-    --set-string env[1].value=61616 \
-    --set env[2].name=\"BROKER_USERNAME\" \
-    --set env[2].value=\"admin\" \
-    --set env[3].name=\"BROKER_PASSWORD\" \
-    --set-string env[3].value=\"$APP_BROKER_ADMIN_PASSWORD\" \
-    --set image.tag=\"main\""
-
-
-    # install monitoring data persistor app
-    echo "Installing Monitoring Data Persistor"
-    $dau bash -c "helm install nebulous-monitoring-data-persistor nebulous/nebulous-monitoring-data-persistor \
-    --set tolerations[0].key=\"node-role.kubernetes.io/control-plane\" \
-    --set tolerations[0].operator=\"Exists\" \
-    --set tolerations[0].effect=\"NoSchedule\" \
-    --set env[0].name=\"broker_ip\" \
-    --set env[0].value=\"nebulous-activemq\" \
-    --set env[1].name=\"broker_port\" \
-    --set-string env[1].value=61616 \
-    --set env[2].name=\"broker_username\" \
-    --set env[2].value=\"admin\" \
-    --set env[3].name=\"broker_password\" \
-    --set-string env[3].value=\"$APP_BROKER_ADMIN_PASSWORD\" \
-    --set env[4].name=\"INFLUXDB_TOKEN\" \
-    --set-string env[4].value=\"$INFLUXDB_ADMIN_TOKEN\" \
-    --set image.tag=\"main\""
-
-    # install ems server
-    echo "Installing EMS"
-    $dau bash -c "helm install ems nebulous/ems-server \
-      --set tolerations[0].key=\"node-role.kubernetes.io/control-plane\" \
-      --set tolerations[0].operator=\"Exists\" \
-      --set tolerations[0].effect=\"NoSchedule\" \
-      --set app_uuid=\"$APPLICATION_ID\" \
-      --set broker_address=\"nebulous-activemq\" \
-      --set broker_port=\"61616\" \
-      --set broker_username=\"admin\" \
-      --set-string broker_password=\"$APP_BROKER_ADMIN_PASSWORD\" \
-      --set image.tag=\"latest\""
-
-    $dau bash -c "helm install netdata netdata/netdata"
-
-    # install solver
-    echo "Installing Solver"
-    $dau bash -c "helm install solver nebulous/nebulous-optimiser-solver \
-      --set image.tag=\"main\" \
-      --set tolerations[0].key=\"node-role.kubernetes.io/control-plane\" \
-      --set tolerations[0].operator=\"Exists\" \
-      --set tolerations[0].effect=\"NoSchedule\" \
-      --set amplLicense.keyValue=\"$LICENSE_AMPL\" \
-      --set application.id=\"$APPLICATION_ID\" \
-      --set activemq.ACTIVEMQ_HOST=\"nebulous-activemq\" \
-      --set activemq.ACTIVEMQ_PORT=\"61616\"" \
-      --set activemq.ACTIVEMQ_USER=\"admin\"" \
-      --set activemqSecret.keyValue=\"$APP_BROKER_ADMIN_PASSWORD\" 
+    --set amplLicense.keyValue=\"$LICENSE_AMPL\" \
+    --set application.id=\"$APPLICATION_ID\" \
+    --set activemq.ACTIVEMQ_HOST=\"nebulous-activemq\" \
+    --set activemq.ACTIVEMQ_PORT=\"61616\" \
+    --set image.tag=\"main-3aee09dd6d701bc54d9a5ed173dfbcc4e2808e9f-20250506181924\"" 
+    #--set activemq.ACTIVEMQ_USER=\"admin\"" \
+    #--set activemqSecret.keyValue=\"$APP_BROKER_ADMIN_PASSWORD\" 
 else
+  echo "Insalling minimal components in cluster"
   echo "Installing EMS"
   $dau bash -c 'helm install ems nebulous/ems-server \
     --set tolerations[0].key="node-role.kubernetes.io/control-plane" \
