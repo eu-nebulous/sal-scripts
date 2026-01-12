@@ -485,6 +485,8 @@ else
     --set tolerations[0].effect="NoSchedule" \
     --set app_uuid=$APPLICATION_ID \
     --set broker_address=$BROKER_ADDRESS \
+    --set broker_username="guest" \
+    --set broker_password="guest" \
     --set client.image.tag="ems-client-$NEBULOUS_SCRIPTS_BRANCH" \
     --set broker_port=$BROKER_PORT'
 
