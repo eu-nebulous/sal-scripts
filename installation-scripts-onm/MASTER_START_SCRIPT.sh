@@ -469,13 +469,13 @@ if [ "$COMPONENTS_IN_CLUSTER" == "yes" ]; then
     --set tolerations[0].key=\"node-role.kubernetes.io/control-plane\" \
     --set tolerations[0].operator=\"Exists\" \
     --set tolerations[0].effect=\"NoSchedule\" \
-    --set amplLicense.keyValue=\"$LICENSE_AMPL\" \
+    --set AMPL_LICENSE=\"$LICENSE_AMPL\" \
     --set application.id=\"$APPLICATION_ID\" \
     --set activemq.ACTIVEMQ_HOST=\"nebulous-activemq\" \
     --set activemq.ACTIVEMQ_PORT=\"61616\" \
-    --set image.tag=\"$NEBULOUS_SCRIPTS_BRANCH\"" 
-    #--set activemq.ACTIVEMQ_USER=\"admin\"" \
-    #--set activemqSecret.keyValue=\"$APP_BROKER_ADMIN_PASSWORD\" 
+    --set image.tag=\"$NEBULOUS_SCRIPTS_BRANCH\" \
+    --set activemq.ACTIVEMQ_USER=\"admin\" \
+    --set activemq.ACTIVEMQ_PASSWORD=\"$APP_BROKER_ADMIN_PASSWORD\"" 
 else
   echo "Insalling minimal components in cluster"
   echo "Installing EMS"
@@ -496,12 +496,13 @@ else
     --set tolerations[0].key="node-role.kubernetes.io/control-plane" \
     --set tolerations[0].operator="Exists" \
     --set tolerations[0].effect="NoSchedule" \
-    --set amplLicense.keyValue="$LICENSE_AMPL" \
+    --set AMPL_LICENSE="$LICENSE_AMPL" \
     --set application.id=$APPLICATION_ID \
     --set activemq.ACTIVEMQ_USER=$CONTROL_PLANE_BROKER_STATIC_APP_CLIENT_USER \
     --set activemq.ACTIVEMQ_PASSWORD=$CONTROL_PLANE_BROKER_STATIC_APP_CLIENT_PASSWORD \
     --set activemq.ACTIVEMQ_HOST=$CONTROL_PLANE_BROKER_ADDRESS \
-    --set activemq.ACTIVEMQ_PORT=$CONTROL_PLANE_BROKER_PORT'
+    --set activemq.ACTIVEMQ_PORT=$CONTROL_PLANE_BROKER_PORT \
+    --set image.tag=\"$NEBULOUS_SCRIPTS_BRANCH\"' 
 fi
 
 
