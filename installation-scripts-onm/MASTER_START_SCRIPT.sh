@@ -322,7 +322,7 @@ if [ "$COMPONENTS_IN_CLUSTER" == "yes" ]; then
   --set brokerEnv[4].name=\"NEBULOUS_MESSAGE_BRIDGE_PASSWORD\" \
   --set-string brokerEnv[4].value=\"$NEBULOUS_MESSAGE_BRIDGE_PASSWORD\" \
   --set brokerEnv[5].name=\"NEBULOUS_CONTROL_PLANE_BROKER_ADDRESS\" \
-  --set-string brokerEnv[5].value=\"$BROKER_ADDRESS:$BROKER_PORT\" \
+  --set-string brokerEnv[5].value=\"$CONTROL_PLANE_BROKER_ADDRESS:$CONTROL_PLANE_BROKER_PORT\" \
   --set brokerEnv[6].name=\"APP_BROKER_ADDRESS\" \
   --set-string brokerEnv[6].value=\"$app_broker_address:$app_broker_port\" \
   --set brokerEnv[7].name=\"ANONYMOUS_LOGIN\" \
@@ -473,7 +473,7 @@ if [ "$COMPONENTS_IN_CLUSTER" == "yes" ]; then
     --set application.id=\"$APPLICATION_ID\" \
     --set activemq.ACTIVEMQ_HOST=\"nebulous-activemq\" \
     --set activemq.ACTIVEMQ_PORT=\"61616\" \
-    --set image.tag=\"main-3aee09dd6d701bc54d9a5ed173dfbcc4e2808e9f-20250506181924\"" 
+    --set image.tag=\"$NEBULOUS_SCRIPTS_BRANCH\"" 
     #--set activemq.ACTIVEMQ_USER=\"admin\"" \
     #--set activemqSecret.keyValue=\"$APP_BROKER_ADMIN_PASSWORD\" 
 else
@@ -484,11 +484,11 @@ else
     --set tolerations[0].operator="Exists" \
     --set tolerations[0].effect="NoSchedule" \
     --set app_uuid=$APPLICATION_ID \
-    --set broker_address=$BROKER_ADDRESS \
-    --set broker_username="guest" \
-    --set broker_password="guest" \
+    --set broker_address=$CONTROL_PLANE_BROKER_ADDRESS \
+    --set broker_username=$CONTROL_PLANE_BROKER_STATIC_APP_CLIENT_USER \
+    --set broker_password=$CONTROL_PLANE_BROKER_STATIC_APP_CLIENT_PASSWORD \
     --set client.image.tag="ems-client-$NEBULOUS_SCRIPTS_BRANCH" \
-    --set broker_port=$BROKER_PORT'
+    --set broker_port=$CONTROL_PLANE_BROKER_PORT'
 
   $dau bash -c 'helm install netdata netdata/netdata'
   echo "Installing  Solver"
@@ -498,8 +498,10 @@ else
     --set tolerations[0].effect="NoSchedule" \
     --set amplLicense.keyValue="$LICENSE_AMPL" \
     --set application.id=$APPLICATION_ID \
-    --set activemq.ACTIVEMQ_HOST=$BROKER_ADDRESS \
-    --set activemq.ACTIVEMQ_PORT=$BROKER_PORT'
+    --set activemq.ACTIVEMQ_USER=$CONTROL_PLANE_BROKER_STATIC_APP_CLIENT_USER \
+    --set activemq.ACTIVEMQ_PASSWORD=$CONTROL_PLANE_BROKER_STATIC_APP_CLIENT_PASSWORD \
+    --set activemq.ACTIVEMQ_HOST=$CONTROL_PLANE_BROKER_ADDRESS \
+    --set activemq.ACTIVEMQ_PORT=$CONTROL_PLANE_BROKER_PORT'
 fi
 
 
