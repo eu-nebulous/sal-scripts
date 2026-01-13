@@ -325,8 +325,6 @@ if [ "$COMPONENTS_IN_CLUSTER" == "yes" ]; then
   --set-string brokerEnv[5].value=\"$CONTROL_PLANE_BROKER_ADDRESS:$CONTROL_PLANE_BROKER_PORT\" \
   --set brokerEnv[6].name=\"APP_BROKER_ADDRESS\" \
   --set-string brokerEnv[6].value=\"$app_broker_address:$app_broker_port\" \
-  --set brokerEnv[7].name=\"ANONYMOUS_LOGIN\" \
-  --set-string brokerEnv[7].value=\"true\" \
   --set service.activemQNodePort=$app_broker_port \
   --set service.type=\"NodePort\" \
   --wait"
