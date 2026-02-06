@@ -259,6 +259,7 @@ if [ "$COMPONENTS_IN_CLUSTER" == "yes" ]; then
   fi
   # If APP_BROKER_PORT is given, use it. Otherwise, use 30356.
   app_broker_port=${APP_BROKER_PORT:-30356}
+  influxdb_port=${INFLUXDB_PORT:-32754}
   # If PUBLIC_IP is given, use it as app_broker_address. Otherwise, determine it.
   app_broker_address=${PUBLIC_IP}
 
@@ -325,6 +326,12 @@ if [ "$COMPONENTS_IN_CLUSTER" == "yes" ]; then
   --set-string brokerEnv[5].value=\"$CONTROL_PLANE_BROKER_ADDRESS:$CONTROL_PLANE_BROKER_PORT\" \
   --set brokerEnv[6].name=\"APP_BROKER_ADDRESS\" \
   --set-string brokerEnv[6].value=\"$app_broker_address:$app_broker_port\" \
+  --set brokerEnv[7].name=\"INFLUXDB_URL\" \
+  --set-string brokerEnv[7].value=\"http://$app_broker_address:$influxdb_port\" \
+  --set brokerEnv[8].name=\"INFLUXDB_ORG\" \
+  --set-string brokerEnv[8].value=\"my-org\" \
+  --set brokerEnv[9].name=\"INFLUXDB_TOKEN\" \
+  --set-string brokerEnv[9].value=\"$INFLUXDB_ADMIN_TOKEN\" \
   --set service.activemQNodePort=$app_broker_port \
   --set service.type=\"NodePort\" \
   --wait"
@@ -338,6 +345,7 @@ if [ "$COMPONENTS_IN_CLUSTER" == "yes" ]; then
   --set fullnameOverride=\"nebulous-influxdb\" \
   --set secrets.DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=\"$INFLUXDB_ADMIN_TOKEN\" \
   --set image.tag=\"main\" \
+  --set service.influxdbNodePort=$influxdb_port \
   --set service.type=\"NodePort\" \
   --wait"
 
