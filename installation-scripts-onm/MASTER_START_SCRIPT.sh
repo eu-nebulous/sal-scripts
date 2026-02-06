@@ -310,7 +310,7 @@ if [ "$COMPONENTS_IN_CLUSTER" == "yes" ]; then
   --set tolerations[0].operator=\"Exists\" \
   --set tolerations[0].effect=\"NoSchedule\" \
   --set image.repository=\"quay.io/nebulous/activemq-broker-app-cluster\" \
-  --set image.tag=\"componentsinappcluster\" \
+  --set image.tag=\"main\" \
   --set fullnameOverride=\"nebulous-activemq\" \
   --set brokerEnv[0].name=\"ARTEMIS_USER\" \
   --set brokerEnv[0].value=\"admin\" \
