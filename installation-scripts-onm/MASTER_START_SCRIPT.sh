@@ -355,16 +355,11 @@ if [ "$COMPONENTS_IN_CLUSTER" == "yes" ]; then
   --set tolerations[0].key=\"node-role.kubernetes.io/control-plane\" \
   --set tolerations[0].operator=\"Exists\" \
   --set tolerations[0].effect=\"NoSchedule\" \
-  --set application.env[0].name=\"BROKER_ADDRESS\" \
-  --set-string application.env[0].value=\"nebulous-activemq\" \
-  --set application.env[1].name=\"BROKER_PORT\" \
-  --set-string application.env[1].value=61616 \
-  --set application.env[2].name=\"BROKER_USERNAME\" \
-  --set-string application.env[2].value=\"admin\" \
-  --set application.env[3].name=\"BROKER_PASSWORD\" \
-  --set-string application.env[3].value=\"$APP_BROKER_ADMIN_PASSWORD\" \
-  --set application.env[4].name=\"INFLUXDB_TOKEN\" \
-  --set-string application.env[4].value=\"$INFLUXDB_ADMIN_TOKEN\" \
+  --set-string application.env.BROKER_ADDRESS=\"nebulous-activemq\" \
+  --set-string application.env.BROKER_PORT=\"61616\" \
+  --set-string application.env.BROKER_USERNAME=\"admin\" \
+  --set-string application.env.BROKER_PASSWORD=\"$APP_BROKER_ADMIN_PASSWORD\" \
+  --set-string application.env.INFLUXDB_TOKEN=\"$INFLUXDB_ADMIN_TOKEN\" \
   --set image.tag=\"main\""
 
   # install prediction orchestrator app
